@@ -110,7 +110,7 @@ void testStatementFinder() {
 
 
 void testExprNodeFinder() {
-  exprNodeVector exprNodes;
+  expr::nodeVector nodes;
   parseSource(
     "@dummy typedef int t1;\n"
     "@dummy int foo() {}\n"
@@ -121,37 +121,37 @@ void testExprNodeFinder() {
 
 #define exprRoot (*(((expressionStatement*) parser.root.children[4])->expr))
 
-  // TODO 1.1: Deal with non-node values inside exprNodes
+  // TODO 1.1: Deal with non-node values inside nodes
   //           For example, parenCast has a vartype_t
   // findExprNodesByAttr(exprNodeType::type,
   //                     "dummy",
   //                     exprRoot,
-  //                     exprNodes);
+  //                     nodes);
   // ASSERT_EQ(1,
-  //                   (int) exprNodes.size());
-  // exprNodes.clear();
+  //                   (int) nodes.size());
+  // nodes.clear();
 
-  findExprNodesByAttr(exprNodeType::variable,
+  findExprNodesByAttr(expr::nodeType::variable,
                       "dummy",
                       exprRoot,
-                      exprNodes);
+                      nodes);
   ASSERT_EQ(3,
-            (int) exprNodes.size());
-  exprNodes.clear();
+            (int) nodes.size());
+  nodes.clear();
 
-  findExprNodesByAttr(exprNodeType::function,
+  findExprNodesByAttr(expr::nodeType::function,
                       "dummy",
                       exprRoot,
-                      exprNodes);
+                      nodes);
   ASSERT_EQ(2,
-            (int) exprNodes.size());
-  exprNodes.clear();
+            (int) nodes.size());
+  nodes.clear();
 
 #undef exprRoot
 }
 
-bool exclusiveMatcher(exprNode &expr) {
-  variable_t &var = ((variableNode&) expr).value;
+bool exclusiveMatcher(expr::node_t &expr) {
+  variable_t &var = ((expr::variableNode_t&) expr).value;
   return var.hasAttribute("exclusive");
 }
 
@@ -164,7 +164,7 @@ void testStatementExprFinder() {
     "}"
   );
   statementExprMap exprMap;
-  findStatements(exprNodeType::variable,
+  findStatements(expr::nodeType::variable,
                  parser.root,
                  exclusiveMatcher,
                  exprMap);
@@ -175,22 +175,22 @@ void testStatementExprFinder() {
   statementExprMap::iterator it = exprMap.begin();
   while (it != exprMap.end()) {
     statement_t *smnt = it->first;
-    exprNodeVector *exprNodes = &(it->second);
+    expr::nodeVector *nodes = &(it->second);
 
     if (smnt->type() & statementType::expression) {
       // x = (x + x + x) * x
       ASSERT_EQ(5,
-                (int) exprNodes->size());
+                (int) nodes->size());
     } else {
       declarationStatement &declSmnt = *((declarationStatement*) smnt);
       if (declSmnt.declarations.size() == 1) {
         // x; (x doesn't 'count' since it's not in an variableNode)
         ASSERT_EQ(0,
-                  (int) exprNodes->size());
+                  (int) nodes->size());
       } else {
         // y = x, z; (y doesn't 'count' since it's not in an variableNode)
         ASSERT_EQ(1,
-                  (int) exprNodes->size());
+                  (int) nodes->size());
       }
     }
 

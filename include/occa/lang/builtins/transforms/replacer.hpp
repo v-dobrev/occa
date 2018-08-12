@@ -37,12 +37,12 @@ namespace occa {
       public:
         typeReplacer_t();
 
-        virtual exprNode* transformExprNode(exprNode &node);
+        virtual expr::node_t* transformExprNode(expr::node_t &node);
 
         void set(const type_t &from_,
                  type_t &to_);
 
-        bool applyToExpr(exprNode *&expr);
+        bool applyToExpr(expr::node_t *&expr);
       };
 
       class variableReplacer_t : public statementExprTransform {
@@ -53,12 +53,12 @@ namespace occa {
       public:
         variableReplacer_t();
 
-        virtual exprNode* transformExprNode(exprNode &node);
+        virtual expr::node_t* transformExprNode(expr::node_t &node);
 
         void set(const variable_t &from_,
                  variable_t &to_);
 
-        bool applyToExpr(exprNode *&expr);
+        bool applyToExpr(expr::node_t *&expr);
       };
 
       class functionReplacer_t : public statementExprTransform {
@@ -69,12 +69,12 @@ namespace occa {
       public:
         functionReplacer_t();
 
-        virtual exprNode* transformExprNode(exprNode &node);
+        virtual expr::node_t* transformExprNode(expr::node_t &node);
 
         void set(const function_t &from_,
                  function_t &to_);
 
-        bool applyToExpr(exprNode *&expr);
+        bool applyToExpr(expr::node_t *&expr);
       };
     }
 
@@ -82,7 +82,7 @@ namespace occa {
                       const type_t &from,
                       type_t &to);
 
-    void replaceTypes(exprNode &expr,
+    void replaceTypes(expr::node_t &expr,
                       const type_t &from,
                       type_t &to);
 
@@ -90,7 +90,7 @@ namespace occa {
                           const variable_t &from,
                           variable_t &to);
 
-    void replaceVariables(exprNode &expr,
+    void replaceVariables(expr::node_t &expr,
                           const variable_t &from,
                           variable_t &to);
 
@@ -98,7 +98,7 @@ namespace occa {
                           const function_t &from,
                           function_t &to);
 
-    void replaceFunctions(exprNode &expr,
+    void replaceFunctions(expr::node_t &expr,
                           const function_t &from,
                           function_t &to);
 
@@ -106,7 +106,7 @@ namespace occa {
                          const keyword_t &from,
                          keyword_t &to);
 
-    void replaceKeywords(exprNode &expr,
+    void replaceKeywords(expr::node_t &expr,
                          const keyword_t &from,
                          keyword_t &to);
   }

@@ -20,10 +20,10 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
 
-#include <occa/lang/exprNode.hpp>
+#include <occa/lang/builtins/types.hpp>
+#include <occa/lang/token.hpp>
 #include <occa/lang/type.hpp>
 #include <occa/lang/variable.hpp>
-#include <occa/lang/builtins/types.hpp>
 
 namespace occa {
   namespace lang {
@@ -204,7 +204,7 @@ namespace occa {
 
     array_t::array_t(const operatorToken &start_,
                      const operatorToken &end_,
-                     exprNode *size_) :
+                     expr::node_t *size_) :
       start((operatorToken*) start_.clone()),
       end((operatorToken*) end_.clone()),
       size(size_) {}

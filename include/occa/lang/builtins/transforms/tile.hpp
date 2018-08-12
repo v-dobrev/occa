@@ -45,13 +45,13 @@ namespace occa {
                                    forStatement &innerForSmnt);
 
         void setupBlockForStatement(okl::oklForStatement &oklForSmnt,
-                                    exprNode &tileSize,
+                                    expr::node_t &tileSize,
                                     variable_t &blockIter,
                                     forStatement &blockForSmnt,
                                     forStatement &innerForSmnt);
 
         void setupInnerForStatement(okl::oklForStatement &oklForSmnt,
-                                    exprNode &tileSize,
+                                    expr::node_t &tileSize,
                                     variable_t &blockIter,
                                     forStatement &blockForSmnt,
                                     forStatement &innerForSmnt);

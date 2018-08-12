@@ -19,7 +19,6 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
-#include <occa/lang/exprNode.hpp>
 #include <occa/lang/parser.hpp>
 #include <occa/lang/statement.hpp>
 #include <occa/lang/variable.hpp>
@@ -49,7 +48,7 @@ namespace occa {
           return false;
         }
         if (argCount == 1) {
-          exprNode *expr = attr.args[0].expr;
+          expr::node_t *expr = attr.args[0].value;
           bool error = (!expr || !expr->canEvaluate());
           if (!error) {
             primitive value = expr->evaluate();

@@ -19,16 +19,16 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
-#include <occa/lang/exprNode.hpp>
+#include <occa/lang/builtins/transforms/replacer.hpp>
+#include <occa/lang/expr.hpp>
 #include <occa/lang/statement.hpp>
 #include <occa/lang/variable.hpp>
-#include <occa/lang/builtins/transforms/replacer.hpp>
 
 namespace occa {
   namespace lang {
     namespace transforms {
       typeReplacer_t::typeReplacer_t() :
-        statementExprTransform(exprNodeType::type),
+        statementExprTransform(expr::nodeType::type),
         from(NULL),
         to(NULL) {}
 
@@ -38,19 +38,19 @@ namespace occa {
         to   = &to_;
       }
 
-      exprNode* typeReplacer_t::transformExprNode(exprNode &node) {
+      expr::node_t* typeReplacer_t::transformExprNode(expr::node_t &node) {
         if (!from || !to) {
           return &node;
         }
-        type_t &type = ((typeNode&) node).value;
+        type_t &type = ((expr::typeNode_t&) node).value;
         if (&type != from) {
           return &node;
         }
-        return new typeNode(node.token, *to);
+        return new expr::typeNode_t(node.token, *to);
       }
 
       variableReplacer_t::variableReplacer_t() :
-        statementExprTransform(exprNodeType::variable),
+        statementExprTransform(expr::nodeType::variable),
         from(NULL),
         to(NULL) {}
 
@@ -60,19 +60,19 @@ namespace occa {
         to   = &to_;
       }
 
-      exprNode* variableReplacer_t::transformExprNode(exprNode &node) {
+      expr::node_t* variableReplacer_t::transformExprNode(expr::node_t &node) {
         if (!from || !to) {
           return &node;
         }
-        variable_t &var = ((variableNode&) node).value;
+        variable_t &var = ((expr::variableNode_t&) node).value;
         if (&var != from) {
           return &node;
         }
-        return new variableNode(node.token, *to);
+        return new expr::variableNode_t(node.token, *to);
       }
 
       functionReplacer_t::functionReplacer_t() :
-        statementExprTransform(exprNodeType::function),
+        statementExprTransform(expr::nodeType::function),
         from(NULL),
         to(NULL) {}
 
@@ -82,15 +82,15 @@ namespace occa {
         to   = &to_;
       }
 
-      exprNode* functionReplacer_t::transformExprNode(exprNode &node) {
+      expr::node_t* functionReplacer_t::transformExprNode(expr::node_t &node) {
         if (!from || !to) {
           return &node;
         }
-        function_t &func = ((functionNode&) node).value;
+        function_t &func = ((expr::functionNode_t&) node).value;
         if (&func != from) {
           return &node;
         }
-        return new functionNode(node.token, *to);
+        return new expr::functionNode_t(node.token, *to);
       }
     }
 
@@ -102,7 +102,7 @@ namespace occa {
       replacer.statementTransform::apply(smnt);
     }
 
-    void replaceTypes(exprNode &expr,
+    void replaceTypes(expr::node_t &expr,
                       const type_t &from,
                       type_t &to) {
       transforms::typeReplacer_t replacer;
@@ -118,7 +118,7 @@ namespace occa {
       replacer.statementTransform::apply(smnt);
     }
 
-    void replaceVariables(exprNode &expr,
+    void replaceVariables(expr::node_t &expr,
                           const variable_t &from,
                           variable_t &to) {
       transforms::variableReplacer_t replacer;
@@ -134,7 +134,7 @@ namespace occa {
       replacer.statementTransform::apply(smnt);
     }
 
-    void replaceFunctions(exprNode &expr,
+    void replaceFunctions(expr::node_t &expr,
                           const function_t &from,
                           function_t &to) {
       transforms::functionReplacer_t replacer;
@@ -163,7 +163,7 @@ namespace occa {
       }
     }
 
-    void replaceKeywords(exprNode &expr,
+    void replaceKeywords(expr::node_t &expr,
                          const keyword_t &from,
                          keyword_t &to) {
       const int kType = from.type();

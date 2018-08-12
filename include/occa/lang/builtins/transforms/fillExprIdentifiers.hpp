@@ -37,7 +37,7 @@ namespace occa {
 
         fillExprIdentifiers_t(blockStatement *scopeSmnt_);
 
-        virtual exprNode* transformExprNode(exprNode &node);
+        virtual expr::node_t* transformExprNode(expr::node_t &node);
       };
     }
   }

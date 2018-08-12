@@ -25,15 +25,14 @@
 
 #include <vector>
 
-#include <occa/lang/exprNode.hpp>
 #include <occa/lang/statement.hpp>
 #include <occa/lang/statementTransform.hpp>
 #include <occa/lang/exprTransform.hpp>
+#include <occa/lang/expr/node.hpp>
 
 namespace occa {
   namespace lang {
     typedef std::vector<statement_t*> statementPtrVector;
-    typedef std::vector<exprNode*>    exprNodeVector;
 
     namespace transforms {
       //---[ Statement ]----------------

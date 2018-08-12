@@ -24,20 +24,19 @@
 #define OCCA_LANG_EXPRTRANSFORM_HEADER
 
 #include <occa/types.hpp>
+#include <occa/lang/expr/node.hpp>
 
 namespace occa {
   namespace lang {
-    class exprNode;
-
     class exprTransform {
     public:
       udim_t validExprNodeTypes;
 
       exprTransform();
 
-      virtual exprNode* transformExprNode(exprNode &node) = 0;
+      virtual expr::node_t* transformExprNode(expr::node_t &node) = 0;
 
-      exprNode* apply(exprNode &node);
+      expr::node_t* apply(expr::node_t &node);
     };
   }
 }

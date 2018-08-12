@@ -27,6 +27,7 @@
 #include <occa/lang/printer.hpp>
 #include <occa/lang/scope.hpp>
 #include <occa/lang/attribute.hpp>
+#include <occa/lang/expr/node.hpp>
 
 namespace occa {
   namespace lang {
@@ -210,7 +211,7 @@ namespace occa {
 
       void clear();
 
-      exprNode* replaceIdentifiers(exprNode *expr);
+      expr::node_t* replaceIdentifiers(expr::node_t *expr);
 
       virtual void print(printer &pout) const;
       void printChildren(printer &pout) const;

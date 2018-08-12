@@ -31,7 +31,7 @@
 
 #include <occa/lang/preprocessor.hpp>
 #include <occa/lang/specialMacros.hpp>
-#include <occa/lang/expression.hpp>
+#include <occa/lang/expr.hpp>
 #include <occa/lang/tokenizer.hpp>
 
 namespace occa {
@@ -615,13 +615,13 @@ namespace occa {
         delete token;
       }
 
-      exprNode *expr = getExpression(lineTokens);
+      expr::node_t *expr = expr::getExpression(lineTokens);
 
       // Errors when expr is NULL are handled
       //   while forming the expression
       bool exprError = !expr;
       if (expr) {
-        if (expr->type() & exprNodeType::empty) {
+        if (expr->type() & expr::nodeType::empty) {
           errorOn(&directive,
                   "Expected a value or expression");
           exprError = true;

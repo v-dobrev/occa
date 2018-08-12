@@ -387,7 +387,7 @@ namespace occa {
       scope.clear();
     }
 
-    exprNode* blockStatement::replaceIdentifiers(exprNode *expr) {
+    expr::node_t* blockStatement::replaceIdentifiers(expr::node_t *expr) {
       if (!expr) {
         return NULL;
       }

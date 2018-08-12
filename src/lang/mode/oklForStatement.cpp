@@ -19,12 +19,12 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
-#include <occa/lang/exprNode.hpp>
+#include <occa/lang/builtins/types.hpp>
+#include <occa/lang/builtins/transforms/finders.hpp>
+#include <occa/lang/expr.hpp>
+#include <occa/lang/mode/oklForStatement.hpp>
 #include <occa/lang/statement.hpp>
 #include <occa/lang/variable.hpp>
-#include <occa/lang/builtins/types.hpp>
-#include <occa/lang/mode/oklForStatement.hpp>
-#include <occa/lang/builtins/transforms/finders.hpp>
 
 namespace occa {
   namespace lang {
@@ -114,8 +114,8 @@ namespace occa {
           return false;
         }
         // Check valid operator (<, <=, >=, >)
-        exprNode &expr = *(((expressionStatement&) checkSmnt).expr);
-        if (expr.type() != exprNodeType::binary) {
+        expr::node_t &expr = *(((expressionStatement&) checkSmnt).expr);
+        if (expr.type() != expr::nodeType::binary) {
           if (printErrors) {
             checkSmnt.printError(sourceStr() + "{0} Expected to compare ["
                                  + iterator->name()
@@ -124,7 +124,7 @@ namespace occa {
           return false;
         }
         // Set check operator
-        checkOp = (binaryOpNode*) &expr;
+        checkOp = (expr::binaryOpNode_t*) &expr;
         opType_t checkOpType = checkOp->opType();
         if (!(checkOpType & (operatorType::lessThan      |
                              operatorType::lessThanEq    |
@@ -168,11 +168,11 @@ namespace occa {
           return false;
         }
         // Check valid operator (++, --, +=, -=)
-        exprNode *updateExpr = ((expressionStatement&) updateSmnt).expr;
+        expr::node_t *updateExpr = ((expressionStatement&) updateSmnt).expr;
         udim_t eType = updateExpr->type();
-        if (!(eType & (exprNodeType::leftUnary  |
-                       exprNodeType::rightUnary |
-                       exprNodeType::binary))) {
+        if (!(eType & (expr::nodeType::leftUnary  |
+                       expr::nodeType::rightUnary |
+                       expr::nodeType::binary))) {
           if (printErrors) {
             updateSmnt.printError(sourceStr() + "Expected update ["
                                   + iterator->name()
@@ -183,25 +183,25 @@ namespace occa {
         // Make sure we're using the same iterator variable
         bool validOp  = false;
         bool validVar = false;
-        updateOp = (exprOpNode*) updateExpr;
-        if (eType == exprNodeType::leftUnary) {
-          leftUnaryOpNode &opNode = (leftUnaryOpNode&) *updateOp;
+        updateOp = (expr::opNode_t*) updateExpr;
+        if (eType == expr::nodeType::leftUnary) {
+          expr::leftUnaryOpNode_t &opNode = (expr::leftUnaryOpNode_t&) *updateOp;
           opType_t opType = opNode.opType();
           validOp = (opType & (operatorType::leftIncrement |
                                operatorType::leftDecrement));
           validVar = usesIterator(opNode);
           positiveUpdate = (opType & operatorType::leftIncrement);
         }
-        else if (eType == exprNodeType::rightUnary) {
-          rightUnaryOpNode &opNode = (rightUnaryOpNode&) *updateOp;
+        else if (eType == expr::nodeType::rightUnary) {
+          expr::rightUnaryOpNode_t &opNode = (expr::rightUnaryOpNode_t&) *updateOp;
           opType_t opType = opNode.opType();
           validOp = (opType & (operatorType::rightIncrement |
                                operatorType::rightDecrement));
           validVar = usesIterator(opNode);
           positiveUpdate = (opType & operatorType::rightIncrement);
         }
-        else { // eType == exprNodeType::binary
-          binaryOpNode &opNode = (binaryOpNode&) *updateOp;
+        else { // eType == expr::nodeType::binary
+          expr::binaryOpNode_t &opNode = (expr::binaryOpNode_t&) *updateOp;
           opType_t opType = opNode.opType();
           validOp = (opType & (operatorType::addEq |
                                operatorType::subEq));
@@ -227,34 +227,34 @@ namespace occa {
         return true;
       }
 
-      bool oklForStatement::usesIterator(leftUnaryOpNode &opNode) {
-        if (opNode.value->type() != exprNodeType::variable) {
+      bool oklForStatement::usesIterator(expr::leftUnaryOpNode_t &opNode) {
+        if (opNode.value->type() != expr::nodeType::variable) {
           return false;
         }
-        variable_t &var = ((variableNode*) opNode.value)->value;
+        variable_t &var = ((expr::variableNode_t*) opNode.value)->value;
         return (&var == iterator);
       }
 
-      bool oklForStatement::usesIterator(rightUnaryOpNode &opNode) {
-        if (opNode.value->type() != exprNodeType::variable) {
+      bool oklForStatement::usesIterator(expr::rightUnaryOpNode_t &opNode) {
+        if (opNode.value->type() != expr::nodeType::variable) {
           return false;
         }
-        variable_t &var = ((variableNode*) opNode.value)->value;
+        variable_t &var = ((expr::variableNode_t*) opNode.value)->value;
         return (&var == iterator);
       }
 
-      int oklForStatement::usesIterator(binaryOpNode &opNode,
-                                        exprNode *&value) {
+      int oklForStatement::usesIterator(expr::binaryOpNode_t &opNode,
+                                        expr::node_t *&value) {
 
-        if (opNode.leftValue->type() == exprNodeType::variable) {
-          variable_t &var = ((variableNode*) opNode.leftValue)->value;
+        if (opNode.leftValue->type() == expr::nodeType::variable) {
+          variable_t &var = ((expr::variableNode_t*) opNode.leftValue)->value;
           if (&var == iterator) {
             value = opNode.rightValue;
             return -1;
           }
         }
-        if (opNode.rightValue->type() == exprNodeType::variable) {
-          variable_t &var = ((variableNode*) opNode.rightValue)->value;
+        if (opNode.rightValue->type() == expr::nodeType::variable) {
+          variable_t &var = ((expr::variableNode_t*) opNode.rightValue)->value;
           if (&var == iterator) {
             value = opNode.leftValue;
             return 1;
@@ -263,52 +263,52 @@ namespace occa {
         return 0;
       }
 
-      exprNode* oklForStatement::getIterationCount() {
+      expr::node_t* oklForStatement::getIterationCount() {
         if (!valid) {
           return NULL;
         }
 
-        exprNode *initInParen = initValue->wrapInParentheses();
-        exprNode *count = (
-          new binaryOpNode(iterator->source,
-                           positiveUpdate ? op::sub : op::add,
-                           *checkValue,
-                           *initInParen)
+        expr::node_t *initInParen = initValue->wrapInParentheses();
+        expr::node_t *count = (
+          new expr::binaryOpNode_t(iterator->source,
+                                   positiveUpdate ? op::sub : op::add,
+                                   *checkValue,
+                                   *initInParen)
         );
         delete initInParen;
 
         if (checkIsInclusive) {
-          primitiveNode inc(iterator->source, 1);
+          expr::primitiveNode_t inc(iterator->source, 1);
 
-          exprNode *countWithInc = (
-            new binaryOpNode(iterator->source,
-                             positiveUpdate ? op::sub : op::add,
-                             *count,
-                             inc)
+          expr::node_t *countWithInc = (
+            new expr::binaryOpNode_t(iterator->source,
+                                     positiveUpdate ? op::sub : op::add,
+                                     *count,
+                                     inc)
           );
           delete count;
           count = countWithInc;
         }
 
         if (updateValue) {
-          exprNode *updateInParen = updateValue->wrapInParentheses();
+          expr::node_t *updateInParen = updateValue->wrapInParentheses();
 
-          primitiveNode one(iterator->source, 1);
-          binaryOpNode boundCheck(iterator->source,
-                                  positiveUpdate ? op::add : op::sub,
-                                  *count,
-                                  *updateInParen);
-          binaryOpNode boundCheck2(iterator->source,
-                                   positiveUpdate ? op::sub : op::add,
-                                   boundCheck,
-                                   one);
-          exprNode *boundCheckInParen = boundCheck2.wrapInParentheses();
+          expr::primitiveNode_t one(iterator->source, 1);
+          expr::binaryOpNode_t boundCheck(iterator->source,
+                                          positiveUpdate ? op::add : op::sub,
+                                          *count,
+                                          *updateInParen);
+          expr::binaryOpNode_t boundCheck2(iterator->source,
+                                           positiveUpdate ? op::sub : op::add,
+                                           boundCheck,
+                                           one);
+          expr::node_t *boundCheckInParen = boundCheck2.wrapInParentheses();
 
-          exprNode *countWithUpdate = (
-            new binaryOpNode(iterator->source,
-                             op::div,
-                             *boundCheckInParen,
-                             *updateInParen)
+          expr::node_t *countWithUpdate = (
+            new expr::binaryOpNode_t(iterator->source,
+                                     op::div,
+                                     *boundCheckInParen,
+                                     *updateInParen)
           );
           delete count;
           delete updateInParen;
@@ -318,29 +318,29 @@ namespace occa {
         return count;
       }
 
-      exprNode* oklForStatement::makeDeclarationValue(exprNode &magicIterator) {
+      expr::node_t* oklForStatement::makeDeclarationValue(expr::node_t &magicIterator) {
         if (!valid) {
           return NULL;
         }
 
-        exprNode *blockValue = magicIterator.wrapInParentheses();
+        expr::node_t *blockValue = magicIterator.wrapInParentheses();
         if (updateValue) {
-          exprNode *updateInParen = updateValue->wrapInParentheses();
-          binaryOpNode mult(iterator->source,
-                            op::mult,
-                            *updateInParen,
-                            *blockValue);
+          expr::node_t *updateInParen = updateValue->wrapInParentheses();
+          expr::binaryOpNode_t mult(iterator->source,
+                                    op::mult,
+                                    *updateInParen,
+                                    *blockValue);
           delete updateInParen;
           delete blockValue;
           blockValue = mult.wrapInParentheses();
         }
 
-        exprNode *initInParen = initValue->wrapInParentheses();
-        binaryOpNode *value = (
-          new binaryOpNode(iterator->source,
-                           positiveUpdate ? op::add : op::sub,
-                           *initInParen,
-                           *blockValue)
+        expr::node_t *initInParen = initValue->wrapInParentheses();
+        expr::binaryOpNode_t *value = (
+          new expr::binaryOpNode_t(iterator->source,
+                                   positiveUpdate ? op::add : op::sub,
+                                   *initInParen,
+                                   *blockValue)
         );
 
         delete blockValue;
@@ -373,7 +373,7 @@ namespace occa {
 
         attributeToken_t &oklAttr = forSmnt.attributes[attr];
         if (oklAttr.args.size()) {
-          return (int) oklAttr.args[0].expr->evaluate();
+          return (int) oklAttr.args[0].value->evaluate();
         }
 
         statementPtrVector smnts;

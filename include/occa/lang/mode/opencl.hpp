@@ -54,7 +54,7 @@ namespace occa {
 
         void setLocalQualifiers();
 
-        static bool sharedVariableMatcher(exprNode &expr);
+        static bool sharedVariableMatcher(expr::node_t &expr);
 
         void addBarriers();
 

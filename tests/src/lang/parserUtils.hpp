@@ -24,10 +24,10 @@
 
 #include <occa/tools/testing.hpp>
 
-#include <occa/lang/exprNode.hpp>
-#include <occa/lang/parser.hpp>
-#include <occa/lang/builtins/types.hpp>
 #include <occa/lang/builtins/attributes.hpp>
+#include <occa/lang/builtins/types.hpp>
+#include <occa/lang/expr.hpp>
+#include <occa/lang/parser.hpp>
 
 using namespace occa::lang;
 

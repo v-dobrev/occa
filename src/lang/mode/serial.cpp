@@ -19,9 +19,10 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
+#include <occa/lang/builtins/types.hpp>
+#include <occa/lang/expr.hpp>
 #include <occa/lang/mode/serial.hpp>
 #include <occa/lang/mode/okl.hpp>
-#include <occa/lang/builtins/types.hpp>
 
 namespace occa {
   namespace lang {
@@ -130,7 +131,7 @@ namespace occa {
       void serialParser::setupExclusives() {
         // Get @exclusive declarations
         statementExprMap exprMap;
-        findStatements(exprNodeType::variable,
+        findStatements(expr::nodeType::variable,
                        root,
                        exclusiveVariableMatcher,
                        exprMap);
@@ -139,7 +140,7 @@ namespace occa {
         if (!success) return;
         setupExclusiveIndices();
         if (!success) return;
-        transformExprNodes(exprNodeType::variable,
+        transformExprNodes(expr::nodeType::variable,
                            root,
                            updateExclusiveExprNodes);
       }
@@ -237,14 +238,14 @@ namespace occa {
           keyword_t &keyword = innerSmnt.getScopeKeyword(exclusiveIndexName);
           variable_t &indexVar = ((variableKeyword&) keyword).variable;
 
-          variableNode indexVarNode(innerSmnt.source,
-                                    indexVar);
-          primitiveNode zeroNode(innerSmnt.source,
-                                 0);
-          binaryOpNode assign(innerSmnt.source,
-                              op::assign,
-                              indexVarNode,
-                              zeroNode);
+          expr::variableNode_t indexVarNode(innerSmnt.source,
+                                            indexVar);
+          expr::primitiveNode_t zeroNode(innerSmnt.source,
+                                         0);
+          expr::binaryOpNode_t assign(innerSmnt.source,
+                                      op::assign,
+                                      indexVarNode,
+                                      zeroNode);
 
           innerSmnt.up->addBefore(
             innerSmnt,
@@ -260,11 +261,11 @@ namespace occa {
           keyword_t &keyword = innerSmnt.getScopeKeyword(exclusiveIndexName);
           variable_t &indexVar = ((variableKeyword&) keyword).variable;
 
-          variableNode indexVarNode(innerSmnt.source,
-                                    indexVar);
-          leftUnaryOpNode increment(innerSmnt.source,
-                                    op::leftIncrement,
-                                    indexVarNode);
+          expr::variableNode_t indexVarNode(innerSmnt.source,
+                                            indexVar);
+          expr::leftUnaryOpNode_t increment(innerSmnt.source,
+                                            op::leftIncrement,
+                                            indexVarNode);
           innerSmnt.addLast(
             *(new expressionStatement(&innerSmnt,
                                       *(increment.clone())))
@@ -272,7 +273,7 @@ namespace occa {
         }
       }
 
-      bool serialParser::exclusiveVariableMatcher(exprNode &expr) {
+      bool serialParser::exclusiveVariableMatcher(expr::node_t &expr) {
         return expr.hasAttribute("exclusive");
       }
 
@@ -298,10 +299,10 @@ namespace occa {
         }
       }
 
-      exprNode* serialParser::updateExclusiveExprNodes(statement_t &smnt,
-                                                       exprNode &expr,
-                                                       const bool isBeingDeclared) {
-        variable_t &var = ((variableNode&) expr).value;
+      expr::node_t* serialParser::updateExclusiveExprNodes(statement_t &smnt,
+                                                           expr::node_t &expr,
+                                                           const bool isBeingDeclared) {
+        variable_t &var = ((expr::variableNode_t&) expr).value;
         if (!var.hasAttribute("exclusive")) {
           return &expr;
         }
@@ -316,8 +317,8 @@ namespace occa {
             var.vartype.arrays.begin(),
             array_t(startToken,
                     endToken,
-                    new primitiveNode(var.source,
-                                      256))
+                    new expr::primitiveNode_t(var.source,
+                                              256))
           );
           return &expr;
         }
@@ -325,12 +326,12 @@ namespace occa {
         keyword_t &keyword = smnt.getScopeKeyword(exclusiveIndexName);
         variable_t &indexVar = ((variableKeyword&) keyword).variable;
 
-        variableNode indexVarNode(var.source,
-                                  indexVar);
+        expr::variableNode_t indexVarNode(var.source,
+                                          indexVar);
 
-        return new subscriptNode(var.source,
-                                 expr,
-                                 indexVarNode);
+        return new expr::subscriptNode_t(var.source,
+                                         expr,
+                                         indexVarNode);
       }
     }
   }

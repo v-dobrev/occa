@@ -19,12 +19,12 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
-#include <occa/lang/exprNode.hpp>
-#include <occa/lang/mode/oklForStatement.hpp>
-#include <occa/lang/variable.hpp>
 #include <occa/lang/builtins/types.hpp>
 #include <occa/lang/builtins/transforms/tile.hpp>
 #include <occa/lang/builtins/transforms/replacer.hpp>
+#include <occa/lang/expr.hpp>
+#include <occa/lang/mode/oklForStatement.hpp>
+#include <occa/lang/variable.hpp>
 
 namespace occa {
   namespace lang {
@@ -40,7 +40,7 @@ namespace occa {
           return &smnt;
         }
         attributeToken_t &attr = it->second;
-        exprNode &tileSize = *(attr.args[0].expr);
+        expr::node_t &tileSize = *(attr.args[0].value);
 
         okl::oklForStatement oklForSmnt(forSmnt,
                                         "@tile");
@@ -121,7 +121,7 @@ namespace occa {
       }
 
       void tile::setupBlockForStatement(okl::oklForStatement &oklForSmnt,
-                                        exprNode &tileSize,
+                                        expr::node_t &tileSize,
                                         variable_t &blockIter,
                                         forStatement &blockForSmnt,
                                         forStatement &innerForSmnt) {
@@ -132,12 +132,12 @@ namespace occa {
           ->
           for (xTile = START; xTile < END; xTile += (TILE * (INC)))
         */
-        exprNode &updateExpr = *(((expressionStatement*) innerForSmnt.update)->expr);
-        opType_t opType = ((exprOpNode&) updateExpr).opType();
+        expr::node_t &updateExpr = *(((expressionStatement*) innerForSmnt.update)->expr);
+        opType_t opType = ((expr::opNode_t&) updateExpr).opType();
 
         token_t *updateToken =updateExpr.startNode()->token;
 
-        exprNode *updateSizeExpr = &tileSize;
+        expr::node_t *updateSizeExpr = &tileSize;
         const binaryOperator_t *updateOp = &op::addEq;
         if (opType & (operatorType::leftDecrement |
                       operatorType::rightDecrement)) {
@@ -146,28 +146,28 @@ namespace occa {
         else if (opType & (operatorType::addEq |
                            operatorType::subEq)) {
           // INC
-          exprNode *updateSize = ((binaryOpNode&) updateExpr).rightValue;
+          expr::node_t *updateSize = ((expr::binaryOpNode_t&) updateExpr).rightValue;
           // (INC)
-          parenthesesNode updateInParen(updateToken,
-                                        *updateSize);
+          expr::parenthesesNode_t updateInParen(updateToken,
+                                                *updateSize);
           // TILE * (INC)
-          binaryOpNode mult(updateToken,
-                            op::mult,
-                            tileSize,
-                            updateInParen);
+          expr::binaryOpNode_t mult(updateToken,
+                                    op::mult,
+                                    tileSize,
+                                    updateInParen);
           // (TILE * (INC))
-          updateSizeExpr = new parenthesesNode(updateToken,
-                                               mult);
+          updateSizeExpr = new expr::parenthesesNode_t(updateToken,
+                                                       mult);
           if (opType & operatorType::subEq) {
             updateOp = &op::subEq;
           }
         }
         // VAR += (TILE * (INC))
-        variableNode varNode(updateToken, blockIter);
-        exprNode *newUpdateExpr = new binaryOpNode(updateToken,
-                                                   *updateOp,
-                                                   varNode,
-                                                   *updateSizeExpr);
+        expr::variableNode_t varNode(updateToken, blockIter);
+        expr::node_t *newUpdateExpr = new expr::binaryOpNode_t(updateToken,
+                                                               *updateOp,
+                                                               varNode,
+                                                               *updateSizeExpr);
         if (updateSizeExpr != &tileSize) {
           // Delete (TILE * (INC)) if it was created
           delete updateSizeExpr;
@@ -179,7 +179,7 @@ namespace occa {
       }
 
       void tile::setupInnerForStatement(okl::oklForStatement &oklForSmnt,
-                                        exprNode &tileSize,
+                                        expr::node_t &tileSize,
                                         variable_t &blockIter,
                                         forStatement &blockForSmnt,
                                         forStatement &innerForSmnt) {
@@ -194,18 +194,18 @@ namespace occa {
         variableDeclaration &decl = (((declarationStatement*) blockForSmnt.init)
                                      ->declarations[0]);
         token_t *initToken = decl.variable->source;
-        variableNode iterNode(initToken,
-                              *oklForSmnt.iterator);
-        variableNode blockIterNode(initToken, blockIter);
+        expr::variableNode_t iterNode(initToken,
+                                      *oklForSmnt.iterator);
+        expr::variableNode_t blockIterNode(initToken, blockIter);
 
         // Check variables
-        binaryOpNode &checkExpr = ((binaryOpNode&)
-                                   *(((expressionStatement*) blockForSmnt.check)->expr));
+        expr::binaryOpNode_t &checkExpr = ((expr::binaryOpNode_t&)
+                                           *(((expressionStatement*) blockForSmnt.check)->expr));
         token_t *checkToken = checkExpr.startNode()->token;
 
         // Update variables
         const operator_t &updateOp = (
-          ((binaryOpNode&)
+          ((expr::binaryOpNode_t&)
            *(((expressionStatement*) blockForSmnt.update)->expr)
           ).op);
         const bool addUpdate = (updateOp.opType & operatorType::addEq);
@@ -222,20 +222,20 @@ namespace occa {
         );
 
         // Create check
-        binaryOpNode checkValueNode(checkToken,
-                                    addUpdate ? op::add : op::sub,
-                                    blockIterNode,
-                                    tileSize);
-        parenthesesNode checkInParen(checkToken,
-                                     checkValueNode);
+        expr::binaryOpNode_t checkValueNode(checkToken,
+                                            addUpdate ? op::add : op::sub,
+                                            blockIterNode,
+                                            tileSize);
+        expr::parenthesesNode_t checkInParen(checkToken,
+                                             checkValueNode);
 
         const bool varInLeft = oklForSmnt.checkValueOnRight;
-        binaryOpNode &newCheckNode = *(
-          new binaryOpNode(
+        expr::binaryOpNode_t &newCheckNode = *(
+          new expr::binaryOpNode_t(
             checkToken,
             (const binaryOperator_t&) checkExpr.op,
-            varInLeft ? (exprNode&) iterNode : (exprNode&) checkInParen,
-            varInLeft ? (exprNode&) checkInParen : (exprNode&) iterNode
+            varInLeft ? (expr::node_t&) iterNode : (expr::node_t&) checkInParen,
+            varInLeft ? (expr::node_t&) checkInParen : (expr::node_t&) iterNode
           ));
         innerForSmnt.check = new expressionStatement(&innerForSmnt,
                                                      newCheckNode);
@@ -249,14 +249,14 @@ namespace occa {
         attributeArgMap::iterator it = attr.kwargs.find("check");
         bool check = true;
         if (it != attr.kwargs.end()) {
-          check = (bool) it->second.expr->evaluate();
+          check = (bool) it->second.value->evaluate();
         }
         if (!check) {
           return;
         }
         // Check variables
-        binaryOpNode &checkExpr = ((binaryOpNode&)
-                                   *(((expressionStatement*) blockForSmnt.check)->expr));
+        expr::binaryOpNode_t &checkExpr = ((expr::binaryOpNode_t&)
+                                           *(((expressionStatement*) blockForSmnt.check)->expr));
         token_t *checkToken = checkExpr.startNode()->token;
         const bool varInLeft = oklForSmnt.checkValueOnRight;
         // Make ifStatement
@@ -269,14 +269,14 @@ namespace occa {
         token_t *iterToken = (varInLeft
                               ? checkExpr.leftValue->token
                               : checkExpr.rightValue->token);
-        variableNode iterNode(iterToken,
-                              *oklForSmnt.iterator);
-        binaryOpNode &newCheckNode = *(
-          new binaryOpNode(
+        expr::variableNode_t iterNode(iterToken,
+                                      *oklForSmnt.iterator);
+        expr::binaryOpNode_t &newCheckNode = *(
+          new expr::binaryOpNode_t(
             checkExpr.token,
             (const binaryOperator_t&) checkExpr.op,
-            varInLeft ? (exprNode&) iterNode : *(checkExpr.leftValue),
-            varInLeft ? (exprNode&) *(checkExpr.rightValue) : (exprNode&) iterNode
+            varInLeft ? (expr::node_t&) iterNode : *(checkExpr.leftValue),
+            varInLeft ? (expr::node_t&) *(checkExpr.rightValue) : (expr::node_t&) iterNode
           ));
 
         ifSmnt.setCondition(new expressionStatement(&ifSmnt,

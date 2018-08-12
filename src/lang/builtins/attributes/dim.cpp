@@ -19,7 +19,6 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
-#include <occa/lang/exprNode.hpp>
 #include <occa/lang/statement.hpp>
 #include <occa/lang/builtins/attributes/dim.hpp>
 
@@ -84,11 +83,11 @@ namespace occa {
         ::memset(order, 0, argCount * sizeof(int));
         for (int i = 0; i < argCount; ++i) {
           // Test arg value
-          exprNode *expr = attr.args[i].expr;
+          expr::node_t *expr = attr.args[i].value;
           if (!expr
               || !expr->canEvaluate()) {
             if (expr
-                && (expr->type() != exprNodeType::empty)) {
+                && (expr->type() != expr::nodeType::empty)) {
               expr->startNode()->printError(inRangeMessage(argCount));
             } else {
               attr.printError(inRangeMessage(argCount));

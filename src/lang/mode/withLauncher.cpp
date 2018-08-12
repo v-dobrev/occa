@@ -20,12 +20,13 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
 #include <occa/tools/string.hpp>
-#include <occa/lang/mode/withLauncher.hpp>
+#include <occa/lang/builtins/attributes.hpp>
+#include <occa/lang/builtins/transforms/replacer.hpp>
+#include <occa/lang/builtins/types.hpp>
+#include <occa/lang/expr.hpp>
 #include <occa/lang/mode/okl.hpp>
 #include <occa/lang/mode/oklForStatement.hpp>
-#include <occa/lang/builtins/attributes.hpp>
-#include <occa/lang/builtins/types.hpp>
-#include <occa/lang/builtins/transforms/replacer.hpp>
+#include <occa/lang/mode/withLauncher.hpp>
 
 namespace occa {
   namespace lang {
@@ -235,22 +236,22 @@ namespace occa {
         launchBlock.addFirst(
           *(new expressionStatement(
               &launchBlock,
-              *(new identifierNode(forSmnt.source,
-                                   "inner.dims = " + occa::toString(innerDims)))
+              *(new expr::identifierNode_t(forSmnt.source,
+                                           "inner.dims = " + occa::toString(innerDims)))
             ))
         );
         launchBlock.addFirst(
           *(new expressionStatement(
               &launchBlock,
-              *(new identifierNode(forSmnt.source,
-                                   "outer.dims = " + occa::toString(outerDims)))
+              *(new expr::identifierNode_t(forSmnt.source,
+                                           "outer.dims = " + occa::toString(outerDims)))
             ))
         );
         launchBlock.addFirst(
           *(new expressionStatement(
               &launchBlock,
-              *(new identifierNode(forSmnt.source,
-                                   "occa::dim outer, inner"))
+              *(new expr::identifierNode_t(forSmnt.source,
+                                           "occa::dim outer, inner"))
             ))
         );
         // Wrap kernel
@@ -261,16 +262,16 @@ namespace occa {
         launchBlock.add(
           *(new expressionStatement(
               &launchBlock,
-              *(new identifierNode(forSmnt.source,
-                                   ss.str()))
+              *(new expr::identifierNode_t(forSmnt.source,
+                                           ss.str()))
             ))
         );
         // Set run dims
         launchBlock.add(
           *(new expressionStatement(
               &launchBlock,
-              *(new identifierNode(forSmnt.source,
-                                   "kernel.setRunDims(outer, inner)"))
+              *(new expr::identifierNode_t(forSmnt.source,
+                                           "kernel.setRunDims(outer, inner)"))
             ))
         );
         // launch kernel
@@ -287,8 +288,8 @@ namespace occa {
         launchBlock.add(
           *(new expressionStatement(
               &launchBlock,
-              *(new identifierNode(forSmnt.source,
-                                   kernelCall))
+              *(new expr::identifierNode_t(forSmnt.source,
+                                           kernelCall))
             ))
         );
 
@@ -371,18 +372,18 @@ namespace occa {
         return innerMostInnerLoop;
       }
 
-      exprNode& withLauncher::setDim(token_t *source,
-                                     const std::string &name,
-                                     const int index,
-                                     exprNode *value) {
-        identifierNode var(source, name);
-        primitiveNode idx(source, index);
-        subscriptNode access(source, var, idx);
-        exprNode &assign = (
-          *(new binaryOpNode(source,
-                             op::assign,
-                             access,
-                             *value))
+      expr::node_t& withLauncher::setDim(token_t *source,
+                                         const std::string &name,
+                                         const int index,
+                                         expr::node_t *value) {
+        expr::identifierNode_t var(source, name);
+        expr::primitiveNode_t idx(source, index);
+        expr::subscriptNode_t access(source, var, idx);
+        expr::node_t &assign = (
+          *(new expr::binaryOpNode_t(source,
+                                     op::assign,
+                                     access,
+                                     *value))
         );
         delete value;
         return assign;
@@ -525,7 +526,7 @@ namespace occa {
 
       void withLauncher::addBarriersAfterInnerLoop(forStatement &forSmnt) {
         statementExprMap exprMap;
-        findStatements(exprNodeType::op,
+        findStatements(expr::nodeType::op,
                        forSmnt,
                        writesToShared,
                        exprMap);
@@ -552,7 +553,7 @@ namespace occa {
                              barrierSmnt);
       }
 
-      bool withLauncher::writesToShared(exprNode &expr) {
+      bool withLauncher::writesToShared(expr::node_t &expr) {
         // TODO 1.1: Propertly check read<-->write or write<-->write ordering
         // exprOpNode &opNode = (exprOpNode&) expr;
         // if (!(opNode.opType() & (operatorType::increment |
@@ -580,8 +581,8 @@ namespace occa {
 
         identifierToken iteratorSource(oklForSmnt.iterator->source->origin,
                                        iteratorName);
-        identifierNode iterator(&iteratorSource,
-                                iteratorName);
+        expr::identifierNode_t iterator(&iteratorSource,
+                                        iteratorName);
 
         // Create iterator declaration
         variableDeclaration decl;

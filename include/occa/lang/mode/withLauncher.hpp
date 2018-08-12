@@ -72,10 +72,10 @@ namespace occa {
 
         forStatement* getInnerMostInnerLoop(forStatement &forSmnt);
 
-        exprNode& setDim(token_t *source,
-                         const std::string &name,
-                         const int index,
-                         exprNode *value);
+        expr::node_t& setDim(token_t *source,
+                             const std::string &name,
+                             const int index,
+                             expr::node_t *value);
 
         void splitKernels();
 
@@ -91,7 +91,7 @@ namespace occa {
 
         void addBarriersAfterInnerLoop(forStatement &forSmnt);
 
-        static bool writesToShared(exprNode &expr);
+        static bool writesToShared(expr::node_t &expr);
 
         void replaceOccaFor(forStatement &forSmnt);
 

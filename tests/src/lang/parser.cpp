@@ -1070,9 +1070,9 @@ void testAttributeLoading() {
   ASSERT_EQ(2,
             (int) xDim1.args.size());
   ASSERT_EQ(2,
-            (int) xDim1[0]->expr->evaluate());
+            (int) xDim1[0]->value->evaluate());
   ASSERT_EQ(3,
-            (int) xDim1[1]->expr->evaluate());
+            (int) xDim1[1]->value->evaluate());
 
   setStatement("const int *x @dummy(x=2, y=3), *y;",
                statementType::declaration);
@@ -1089,9 +1089,9 @@ void testAttributeLoading() {
   ASSERT_EQ(2,
             (int) xDummy.kwargs.size());
   ASSERT_EQ(2,
-            (int) xDummy["x"]->expr->evaluate());
+            (int) xDummy["x"]->value->evaluate());
   ASSERT_EQ(3,
-            (int) xDummy["y"]->expr->evaluate());
+            (int) xDummy["y"]->value->evaluate());
 
   setStatement("@dim(2 + 2, 10 - 5) const int *x, *y;",
                statementType::declaration);
@@ -1110,17 +1110,17 @@ void testAttributeLoading() {
   ASSERT_EQ(2,
             (int) xDim3.args.size());
   ASSERT_EQ(4,
-            (int) xDim3[0]->expr->evaluate());
+            (int) xDim3[0]->value->evaluate());
   ASSERT_EQ(5,
-            (int) xDim3[1]->expr->evaluate());
+            (int) xDim3[1]->value->evaluate());
 
   attributeToken_t &xDim4 = declVarAttr(1, "dim");
   ASSERT_EQ(2,
             (int) xDim4.args.size());
   ASSERT_EQ(4,
-            (int) xDim4[0]->expr->evaluate());
+            (int) xDim4[0]->value->evaluate());
   ASSERT_EQ(5,
-            (int) xDim4[1]->expr->evaluate());
+            (int) xDim4[1]->value->evaluate());
 
   std::cerr << "\n---[ @dim Transformations ]---------------------\n";
   parseAndPrintSource("@dim(1,2,3) int *x; x(1,2,3);");

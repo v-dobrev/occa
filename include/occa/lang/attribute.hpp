@@ -27,6 +27,7 @@
 #include <map>
 
 #include <occa/lang/tokenContext.hpp>
+#include <occa/lang/expr/node.hpp>
 
 namespace occa {
   namespace lang {
@@ -63,14 +64,14 @@ namespace occa {
     //---[ Attribute Arg ]--------------
     class attributeArg_t {
     public:
-      exprNode *expr;
+      expr::node_t *value;
       attributeTokenMap attributes;
 
       attributeArg_t();
 
-      attributeArg_t(exprNode *expr_);
+      attributeArg_t(expr::node_t *value_);
 
-      attributeArg_t(exprNode *expr_,
+      attributeArg_t(expr::node_t *value_,
                      attributeTokenMap attributes_);
 
       attributeArg_t(const attributeArg_t &other);

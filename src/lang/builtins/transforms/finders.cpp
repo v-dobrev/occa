@@ -20,8 +20,9 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
 
-#include <occa/lang/variable.hpp>
 #include <occa/lang/builtins/transforms/finders.hpp>
+#include <occa/lang/expr.hpp>
+#include <occa/lang/variable.hpp>
 
 namespace occa {
   namespace lang {
@@ -75,13 +76,13 @@ namespace occa {
       //---[ Expr Node ]----------------
       exprNodeFinder::exprNodeFinder() {}
 
-      void exprNodeFinder::getExprNodes(exprNode &expr,
-                                        exprNodeVector &exprNodes_) {
+      void exprNodeFinder::getExprNodes(expr::node_t &expr,
+                                        expr::nodeVector &exprNodes_) {
         exprNodes = &exprNodes_;
         apply(expr);
       }
 
-      exprNode* exprNodeFinder::transformExprNode(exprNode &expr) {
+      expr::node_t* exprNodeFinder::transformExprNode(expr::node_t &expr) {
         if (matchesExprNode(expr)) {
           exprNodes->push_back(&expr);
         }
@@ -92,7 +93,7 @@ namespace occa {
         validExprNodeTypes = validExprNodeTypes_;
       }
 
-      bool exprNodeTypeFinder::matchesExprNode(exprNode &expr) {
+      bool exprNodeTypeFinder::matchesExprNode(expr::node_t &expr) {
         return true;
       }
 
@@ -100,12 +101,12 @@ namespace occa {
                                              const std::string &attr_) :
         attr(attr_) {
         validExprNodeTypes = (validExprNodeTypes_
-                              & (exprNodeType::type     |
-                                 exprNodeType::variable |
-                                 exprNodeType::function));
+                              & (expr::nodeType::type     |
+                                 expr::nodeType::variable |
+                                 expr::nodeType::function));
       }
 
-      bool exprNodeAttrFinder::matchesExprNode(exprNode &expr) {
+      bool exprNodeAttrFinder::matchesExprNode(expr::node_t &expr) {
         return expr.hasAttribute(attr);
       }
 
@@ -115,7 +116,7 @@ namespace occa {
         validExprNodeTypes = validExprNodeTypes_;
       }
 
-      bool exprNodeMatcherFinder::matchesExprNode(exprNode &expr) {
+      bool exprNodeMatcherFinder::matchesExprNode(expr::node_t &expr) {
         return matcher(expr);
       }
       //================================
@@ -155,15 +156,15 @@ namespace occa {
         // Function Declaration
         if (smnt.type() & statementType::functionDecl) {
           functionDeclStatement &declSmnt = (functionDeclStatement&) smnt;
-          functionNode *funcNode = new functionNode(declSmnt.function.source,
-                                                    declSmnt.function);
+          expr::functionNode_t *funcNode = new expr::functionNode_t(declSmnt.function.source,
+                                                                    declSmnt.function);
           nextExprIsBeingDeclared = true;
-          exprNode *newNode = exprTransform::apply(*funcNode);
+          expr::node_t *newNode = exprTransform::apply(*funcNode);
           nextExprIsBeingDeclared = false;
           // Update variable
           if (newNode != funcNode) {
-            if (newNode->type() & exprNodeType::function) {
-              function_t &newFunc = ((functionNode*) newNode)->value;
+            if (newNode->type() & expr::nodeType::function) {
+              function_t &newFunc = ((expr::functionNode_t*) newNode)->value;
               delete newNode;
               functionDeclStatement *newSmnt = new functionDeclStatement(smnt.up, newFunc);
               newSmnt->updateScope(true);
@@ -179,15 +180,15 @@ namespace occa {
         const int declCount = (int) declSmnt.declarations.size();
         for (int di = 0; di < declCount; ++di) {
           variableDeclaration &decl = declSmnt.declarations[di];
-          variableNode *varNode = new variableNode(decl.variable->source,
-                                                   *decl.variable);
+          expr::variableNode_t *varNode = new expr::variableNode_t(decl.variable->source,
+                                                                   *decl.variable);
           nextExprIsBeingDeclared = true;
-          exprNode *newNode = exprTransform::apply(*varNode);
+          expr::node_t *newNode = exprTransform::apply(*varNode);
           nextExprIsBeingDeclared = false;
           // Update variable
           if (newNode != varNode) {
-            if (newNode->type() & exprNodeType::variable) {
-              decl.variable = &(((variableNode*) newNode)->value);
+            if (newNode->type() & expr::nodeType::variable) {
+              decl.variable = &(((expr::variableNode_t*) newNode)->value);
             }
           }
           delete newNode;
@@ -200,7 +201,7 @@ namespace occa {
         return &smnt;
       }
 
-      exprNode* statementExprTransform::transformExprNode(exprNode &node) {
+      expr::node_t* statementExprTransform::transformExprNode(expr::node_t &node) {
         if (transform) {
           return transform(*currentSmnt,
                            node,
@@ -233,7 +234,7 @@ namespace occa {
         const int smntCount = (int) statements_.size();
         for (int i = 0; i < smntCount; ++i) {
           statement_t &foundSmnt = *(statements_[i]);
-          exprNodeVector exprNodes_;
+          expr::nodeVector exprNodes_;
           bool addSmnt = false;
 
           // Expression
@@ -247,8 +248,8 @@ namespace occa {
             const int declCount = (int) declSmnt.declarations.size();
             for (int di = 0; di < declCount; ++di) {
               variableDeclaration &decl = declSmnt.declarations[di];
-              variableNode varNode(decl.variable->source,
-                                   *decl.variable);
+              expr::variableNode_t varNode(decl.variable->source,
+                                           *decl.variable);
               if (matcher(varNode)) {
                 addSmnt = true;
               }
@@ -453,9 +454,9 @@ namespace occa {
     }
 
     void findExprNodes(const int validExprNodeTypes,
-                       exprNode &expr,
+                       expr::node_t &expr,
                        exprNodeMatcher matcher,
-                       exprNodeVector &exprNodes) {
+                       expr::nodeVector &exprNodes) {
 
       transforms::exprNodeMatcherFinder finder(validExprNodeTypes,
                                                matcher);
@@ -463,8 +464,8 @@ namespace occa {
     }
 
     void findExprNodesByType(const int validExprNodeTypes,
-                             exprNode &expr,
-                             exprNodeVector &exprNodes) {
+                             expr::node_t &expr,
+                             expr::nodeVector &exprNodes) {
 
       transforms::exprNodeTypeFinder finder(validExprNodeTypes);
       finder.getExprNodes(expr, exprNodes);
@@ -472,8 +473,8 @@ namespace occa {
 
     void findExprNodesByAttr(const int validExprNodeTypes,
                              const std::string &attr,
-                             exprNode &expr,
-                             exprNodeVector &exprNodes) {
+                             expr::node_t &expr,
+                             expr::nodeVector &exprNodes) {
 
       transforms::exprNodeAttrFinder finder(validExprNodeTypes, attr);
       finder.getExprNodes(expr, exprNodes);

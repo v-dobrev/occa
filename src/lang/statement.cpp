@@ -19,10 +19,10 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
-#include <occa/lang/expression.hpp>
+#include <occa/lang/builtins/types.hpp>
+#include <occa/lang/expr/expression.hpp>
 #include <occa/lang/statement.hpp>
 #include <occa/lang/type.hpp>
-#include <occa/lang/builtins/types.hpp>
 #include <occa/lang/variable.hpp>
 
 namespace occa {
@@ -233,7 +233,7 @@ namespace occa {
 
     //---[ Expression ]-----------------
     expressionStatement::expressionStatement(blockStatement *up_,
-                                             exprNode &expr_,
+                                             expr::node_t &expr_,
                                              const bool hasSemicolon_) :
       statement_t(up_, expr_.startNode()->token),
       expr(&expr_),
@@ -840,7 +840,7 @@ namespace occa {
     //---[ Case ]-----------------------
     caseStatement::caseStatement(blockStatement *up_,
                                  token_t *source_,
-                                 exprNode &value_) :
+                                 expr::node_t &value_) :
       statement_t(up_, source_),
       value(&value_) {}
 
@@ -967,14 +967,14 @@ namespace occa {
 
     returnStatement::returnStatement(blockStatement *up_,
                                      token_t *source_,
-                                     exprNode *value_) :
+                                     expr::node_t *value_) :
       statement_t(up_, source_),
       value(value_) {}
 
     returnStatement::returnStatement(blockStatement *up_,
                                      const returnStatement &other) :
       statement_t(up_, other),
-      value(exprNode::clone(other.value)) {}
+      value(expr::node_t::clone(other.value)) {}
 
     returnStatement::~returnStatement() {
       delete value;

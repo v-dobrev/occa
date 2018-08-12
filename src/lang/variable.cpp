@@ -20,7 +20,6 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
 #include <occa/lang/attribute.hpp>
-#include <occa/lang/exprNode.hpp>
 #include <occa/lang/statement.hpp>
 #include <occa/lang/variable.hpp>
 
@@ -176,12 +175,12 @@ namespace occa {
       value(NULL) {}
 
     variableDeclaration::variableDeclaration(variable_t &variable_,
-                                             exprNode *value_) :
+                                             expr::node_t *value_) :
       variable(&variable_),
       value(value_) {}
 
     variableDeclaration::variableDeclaration(variable_t &variable_,
-                                             exprNode &value_) :
+                                             expr::node_t &value_) :
       variable(&variable_),
       value(&value_) {}
 

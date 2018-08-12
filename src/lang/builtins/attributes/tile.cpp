@@ -19,7 +19,6 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
-#include <occa/lang/exprNode.hpp>
 #include <occa/lang/parser.hpp>
 #include <occa/lang/statement.hpp>
 #include <occa/lang/variable.hpp>
@@ -54,14 +53,14 @@ namespace occa {
                           " for the block and in-block loops respectively");
           return false;
         }
-        if (attr.args[0].expr->type() == exprNodeType::empty) {
+        if (attr.args[0].value->type() == expr::nodeType::empty) {
           attr.printError("[@tile] expects a non-empty first argument");
           return false;
         }
         for (int i = 1; i < argCount; ++i) {
-          if (attr.args[i].expr->type() != exprNodeType::empty) {
+          if (attr.args[i].value->type() != expr::nodeType::empty) {
             attr.args[i]
-              .expr
+              .value
               ->startNode()
               ->printError("[@tile] can only take attributes for the 2nd and 3rd arguments");
             return false;
@@ -75,15 +74,15 @@ namespace occa {
         while (it != attr.kwargs.end()) {
           if (it->first != "check") {
             it->second
-              .expr
+              .value
               ->startNode()
               ->printError("[@tile] does not take this kwarg");
             return false;
           }
-          exprNode *value = it->second.expr;
+          expr::node_t *value = it->second.value;
           if (!value->canEvaluate()) {
             it->second
-              .expr
+              .value
               ->startNode()
               ->printError("[@tile] 'check' argument must be true or false");
             return false;

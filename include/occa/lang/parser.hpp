@@ -124,9 +124,9 @@ namespace occa {
       //================================
 
       //---[ Helper Methods ]-----------
-      exprNode* getExpression();
-      exprNode* getExpression(const int start,
-                              const int end);
+      expr::node_t* getExpression();
+      expr::node_t* getExpression(const int start,
+                                  const int end);
       token_t* replaceIdentifier(identifierToken &identifier);
 
       attribute_t* getAttribute(const std::string &name);

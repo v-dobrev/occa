@@ -20,7 +20,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
 #include <occa/lang/baseStatement.hpp>
-#include <occa/lang/exprNode.hpp>
+#include <occa/lang/expr.hpp>
 #include <occa/lang/keyword.hpp>
 #include <occa/lang/builtins/transforms/fillExprIdentifiers.hpp>
 
@@ -29,14 +29,14 @@ namespace occa {
     namespace transforms {
       fillExprIdentifiers_t::fillExprIdentifiers_t(blockStatement *scopeSmnt_) :
         scopeSmnt(scopeSmnt_) {
-        validExprNodeTypes = exprNodeType::identifier;
+        validExprNodeTypes = expr::nodeType::identifier;
       }
 
-      exprNode* fillExprIdentifiers_t::transformExprNode(exprNode &node) {
+      expr::node_t* fillExprIdentifiers_t::transformExprNode(expr::node_t &node) {
         if (!scopeSmnt) {
           return &node;
         }
-        const std::string &name = ((identifierNode&) node).value;
+        const std::string &name = ((expr::identifierNode_t&) node).value;
         keyword_t &keyword = scopeSmnt->getScopeKeyword(name);
         const int kType = keyword.type();
         if (!(kType & (keywordType::type     |
@@ -46,16 +46,16 @@ namespace occa {
         }
 
         if (kType & keywordType::variable) {
-          return new variableNode(node.token,
-                                  ((variableKeyword&) keyword).variable);
+          return new expr::variableNode_t(node.token,
+                                          ((variableKeyword&) keyword).variable);
         }
         if (kType & keywordType::function) {
-          return new functionNode(node.token,
-                                  ((functionKeyword&) keyword).function);
+          return new expr::functionNode_t(node.token,
+                                          ((functionKeyword&) keyword).function);
         }
         // keywordType::type
-        return new typeNode(node.token,
-                            ((typeKeyword&) keyword).type_);
+        return new expr::typeNode_t(node.token,
+                                    ((typeKeyword&) keyword).type_);
       }
     }
   }

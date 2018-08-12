@@ -28,13 +28,13 @@
 #include <occa/lang/baseStatement.hpp>
 #include <occa/lang/printer.hpp>
 #include <occa/lang/qualifier.hpp>
+#include <occa/lang/expr/node.hpp>
 
 namespace occa {
   namespace lang {
     class token_t;
     class identifierToken;
     class operatorToken;
-    class exprNode;
     class blockStatement;
     class pointer_t;
     class array_t;
@@ -165,13 +165,13 @@ namespace occa {
     class array_t {
     public:
       operatorToken *start, *end;
-      exprNode *size;
+      expr::node_t *size;
 
       array_t();
 
       array_t(const operatorToken &start_,
               const operatorToken &end_,
-              exprNode *size_);
+              expr::node_t *size_);
 
       array_t(const array_t &other);
 

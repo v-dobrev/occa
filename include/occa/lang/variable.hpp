@@ -89,15 +89,15 @@ namespace occa {
       //         to the declarationStatement
     public:
       variable_t *variable;
-      exprNode *value;
+      expr::node_t *value;
 
       variableDeclaration();
 
       variableDeclaration(variable_t &variable_,
-                          exprNode *value_ = NULL);
+                          expr::node_t *value_ = NULL);
 
       variableDeclaration(variable_t &variable_,
-                          exprNode &value_);
+                          expr::node_t &value_);
 
       variableDeclaration(const variableDeclaration &other);
 

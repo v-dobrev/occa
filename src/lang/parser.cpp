@@ -21,7 +21,7 @@
  */
 #include <occa/io.hpp>
 #include <occa/lang/attribute.hpp>
-#include <occa/lang/expression.hpp>
+#include <occa/lang/expr.hpp>
 #include <occa/lang/parser.hpp>
 #include <occa/lang/variable.hpp>
 #include <occa/lang/builtins/attributes.hpp>
@@ -339,12 +339,12 @@ namespace occa {
     //==================================
 
     //---[ Helper Methods ]-------------
-    exprNode* parser_t::getExpression() {
+    expr::node_t* parser_t::getExpression() {
       return getExpression(0, context.size());
     }
 
-    exprNode* parser_t::getExpression(const int start,
-                                      const int end) {
+    expr::node_t* parser_t::getExpression(const int start,
+                                          const int end) {
       context.push(start, end);
       const int tokenCount = context.size();
       tokenVector tokens;
@@ -380,7 +380,7 @@ namespace occa {
       }
       context.pop();
 
-      exprNode *expr = occa::lang::getExpression(tokens);
+      expr::node_t *expr = occa::lang::expr::getExpression(tokens);
       success &= !!expr;
       return expr;
     }
@@ -485,7 +485,7 @@ namespace occa {
                      argRanges[i].end);
 
         if (!context.size()) {
-          arg.expr = new emptyNode();
+          arg.value = new expr::emptyNode_t();
           attr.args.push_back(arg);
           context.popAndSkip();
           continue;
@@ -494,14 +494,14 @@ namespace occa {
         // Load args
         loadAttributes(arg.attributes);
         if (!context.size()) {
-          arg.expr = new emptyNode();
+          arg.value = new expr::emptyNode_t();
           attr.args.push_back(arg);
           context.popAndSkip();
           continue;
         }
 
         // Get argument
-        arg.expr = getExpression();
+        arg.value = getExpression();
         if (!success) {
           context.pop();
           arg.clear();
@@ -515,12 +515,12 @@ namespace occa {
         // |   |---[argName] (identifier)
         // |   |
         // |   |---[arg] (?)
-        if (arg.expr->type() & exprNodeType::binary) {
-          binaryOpNode &equalsNode = arg.expr->to<binaryOpNode>();
+        if (arg.value->type() & expr::nodeType::binary) {
+          expr::binaryOpNode_t &equalsNode = arg.value->to<expr::binaryOpNode_t>();
           if ((equalsNode.opType() & operatorType::assign) &&
-              (equalsNode.leftValue->type() & exprNodeType::identifier)) {
-            argName = equalsNode.leftValue->to<identifierNode>().value;
-            arg.expr = equalsNode.rightValue->clone();
+              (equalsNode.leftValue->type() & expr::nodeType::identifier)) {
+            argName = equalsNode.leftValue->to<expr::identifierNode_t>().value;
+            arg.value = equalsNode.rightValue->clone();
             delete &equalsNode;
           }
         }
@@ -788,7 +788,7 @@ namespace occa {
         return;
       }
 
-      exprNode *value = getExpression(1, pos);
+      expr::node_t *value = getExpression(1, pos);
       if (!success) {
         return;
       }
@@ -1127,7 +1127,7 @@ namespace occa {
         operatorToken &end   = context.getClosingPairToken(0)->to<operatorToken>();
         context.pushPairRange(0);
 
-        exprNode *value = NULL;
+        expr::node_t *value = NULL;
         if (context.size()) {
           value = getExpression();
           if (!success) {
@@ -1300,7 +1300,7 @@ namespace occa {
       }
 
       context.push(0, end);
-      exprNode *expr = getExpression();
+      expr::node_t *expr = getExpression();
       context.pop();
       if (!success) {
         return NULL;
@@ -1990,7 +1990,7 @@ namespace occa {
         success = false;
         return NULL;
       }
-      exprNode *value = NULL;
+      expr::node_t *value = NULL;
       // The case where we see 'case:'
       if (0 < pos) {
         // Load the case expression
@@ -2065,7 +2065,7 @@ namespace occa {
         success = false;
         return NULL;
       }
-      exprNode *value = NULL;
+      expr::node_t *value = NULL;
       // The case where we see 'return;'
       if (0 < pos) {
         // Load the return value

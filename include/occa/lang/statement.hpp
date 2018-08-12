@@ -146,11 +146,11 @@ namespace occa {
     //---[ Expression ]-----------------
     class expressionStatement : public statement_t {
     public:
-      exprNode *expr;
+      expr::node_t *expr;
       bool hasSemicolon;
 
       expressionStatement(blockStatement *up_,
-                          exprNode &expr_,
+                          expr::node_t &expr_,
                           const bool hasSemicolon_ = true);
       expressionStatement(blockStatement *up_,
                           const expressionStatement &other);
@@ -392,11 +392,11 @@ namespace occa {
     //---[ Case ]-----------------------
     class caseStatement : public statement_t {
     public:
-      exprNode *value;
+      expr::node_t *value;
 
       caseStatement(blockStatement *up_,
                     token_t *source_,
-                    exprNode &value_);
+                    expr::node_t &value_);
       caseStatement(blockStatement *up_,
                     const caseStatement &other);
       ~caseStatement();
@@ -461,11 +461,11 @@ namespace occa {
 
     class returnStatement : public statement_t {
     public:
-      exprNode *value;
+      expr::node_t *value;
 
       returnStatement(blockStatement *up_,
                       token_t *source_,
-                      exprNode *value_);
+                      expr::node_t *value_);
       returnStatement(blockStatement *up_,
                         const returnStatement &other);
       ~returnStatement();

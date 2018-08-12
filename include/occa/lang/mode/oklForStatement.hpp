@@ -23,14 +23,16 @@
 #define OCCA_LANG_MODES_OKLFORSTATEMENT_HEADER
 
 #include <occa/lang/statement.hpp>
+#include <occa/lang/expr/node.hpp>
 
 namespace occa {
   namespace lang {
-    class exprNode;
-    class exprOpNode;
-    class leftUnaryOpNode;
-    class rightUnaryOpNode;
-    class binaryOpNode;
+    namespace expr {
+      class opNode_t;
+      class leftUnaryOpNode_t;
+      class rightUnaryOpNode_t;
+      class binaryOpNode_t;
+    }
 
     namespace transforms {
       class smntTreeNode;
@@ -44,15 +46,15 @@ namespace occa {
         const bool printErrors;
 
         variable_t *iterator;
-        exprNode *initValue;
+        expr::node_t *initValue;
 
-        binaryOpNode *checkOp;
-        exprNode *checkValue;
+        expr::binaryOpNode_t *checkOp;
+        expr::node_t *checkValue;
         bool checkValueOnRight;
         bool checkIsInclusive;
 
-        exprOpNode *updateOp;
-        exprNode *updateValue;
+        expr::opNode_t *updateOp;
+        expr::node_t *updateValue;
         bool positiveUpdate;
 
         bool valid;
@@ -73,16 +75,16 @@ namespace occa {
 
         bool hasValidUpdate();
 
-        bool usesIterator(leftUnaryOpNode &opNode);
+        bool usesIterator(expr::leftUnaryOpNode_t &opNode);
 
-        bool usesIterator(rightUnaryOpNode &opNode);
+        bool usesIterator(expr::rightUnaryOpNode_t &opNode);
 
-        int usesIterator(binaryOpNode &opNode,
-                         exprNode *&value);
+        int usesIterator(expr::binaryOpNode_t &opNode,
+                         expr::node_t *&value);
 
-        exprNode* getIterationCount();
+        expr::node_t* getIterationCount();
 
-        exprNode* makeDeclarationValue(exprNode &magicIterator);
+        expr::node_t* makeDeclarationValue(expr::node_t &magicIterator);
 
         bool isInnerLoop();
         bool isOuterLoop();

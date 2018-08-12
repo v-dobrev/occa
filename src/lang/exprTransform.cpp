@@ -19,7 +19,6 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
-#include <occa/lang/exprNode.hpp>
 #include <occa/lang/exprTransform.hpp>
 
 namespace occa {
@@ -27,14 +26,14 @@ namespace occa {
     exprTransform::exprTransform() :
       validExprNodeTypes(0) {}
 
-    exprNode* exprTransform::apply(exprNode &node) {
+    expr::node_t* exprTransform::apply(expr::node_t &node) {
       // Apply transform to children
-      exprNodeRefVector children;
+      expr::nodeRefVector children;
       node.setChildren(children);
       const int childCount = (int) children.size();
       for (int i = 0; i < childCount; ++i) {
-        exprNode *&child = *(children[i]);
-        exprNode *newChild = apply(*child);
+        expr::node_t *&child = *(children[i]);
+        expr::node_t *newChild = apply(*child);
         if (!newChild) {
           return NULL;
         }
@@ -42,7 +41,7 @@ namespace occa {
       }
 
       // Apply transform to self
-      exprNode *newNode = &node;
+      expr::node_t *newNode = &node;
       if (node.type() & validExprNodeTypes) {
         newNode = transformExprNode(node);
         if (newNode != &node) {

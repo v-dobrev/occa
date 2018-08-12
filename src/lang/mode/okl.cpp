@@ -19,13 +19,14 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
-#include <occa/lang/mode/okl.hpp>
-#include <occa/lang/variable.hpp>
-#include <occa/lang/parser.hpp>
 #include <occa/lang/builtins/attributes.hpp>
 #include <occa/lang/builtins/types.hpp>
 #include <occa/lang/builtins/transforms/finders.hpp>
+#include <occa/lang/expr.hpp>
+#include <occa/lang/mode/okl.hpp>
 #include <occa/lang/mode/oklForStatement.hpp>
+#include <occa/lang/parser.hpp>
+#include <occa/lang/variable.hpp>
 
 namespace occa {
   namespace lang {
@@ -150,9 +151,9 @@ namespace occa {
         if (smnt.type() & statementType::declaration) {
           return oklDeclAttrMatcher(smnt, attr);
         }
-        exprNode *expr = ((expressionStatement&) smnt).expr;
-        exprNodeVector nodes;
-        findExprNodesByAttr(exprNodeType::variable,
+        expr::node_t *expr = ((expressionStatement&) smnt).expr;
+        expr::nodeVector nodes;
+        findExprNodesByAttr(expr::nodeType::variable,
                             attr,
                             *expr,
                             nodes);
@@ -448,8 +449,8 @@ namespace occa {
         const int loopIndex = oklForSmnt.oklLoopIndex();
 
         oklAttr.args.push_back(
-          new primitiveNode(oklAttr.source->clone(),
-                            loopIndex)
+          new expr::primitiveNode_t(oklAttr.source->clone(),
+                                    loopIndex)
         );
       }
       //================================

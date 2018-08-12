@@ -20,7 +20,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
 #include <occa/lang/attribute.hpp>
-#include <occa/lang/exprNode.hpp>
+#include <occa/lang/expr.hpp>
 #include <occa/lang/parser.hpp>
 
 namespace occa {
@@ -39,22 +39,22 @@ namespace occa {
 
     //---[ Attribute Arg ]--------------
     attributeArg_t::attributeArg_t() :
-      expr(NULL) {}
+      value(NULL) {}
 
-    attributeArg_t::attributeArg_t(exprNode *expr_) :
-      expr(expr_) {}
+    attributeArg_t::attributeArg_t(expr::node_t *value_) :
+      value(value_) {}
 
-    attributeArg_t::attributeArg_t(exprNode *expr_,
+    attributeArg_t::attributeArg_t(expr::node_t *value_,
                                    attributeTokenMap attributes_) :
-      expr(expr_),
+      value(value_),
       attributes(attributes_) {}
 
     attributeArg_t::attributeArg_t(const attributeArg_t &other) :
-      expr(other.expr),
+      value(other.value),
       attributes(other.attributes) {}
 
     attributeArg_t& attributeArg_t::operator = (const attributeArg_t &other) {
-      expr = other.expr;
+      value = other.value;
       attributes = other.attributes;
       return *this;
     }
@@ -62,8 +62,8 @@ namespace occa {
     attributeArg_t::~attributeArg_t() {}
 
     void attributeArg_t::clear() {
-      delete expr;
-      expr = NULL;
+      delete value;
+      value = NULL;
       attributeTokenMap::iterator it = attributes.begin();
       while (it != attributes.end()) {
         it->second.clear();
@@ -73,7 +73,7 @@ namespace occa {
     }
 
     bool attributeArg_t::exists() const {
-      return expr;
+      return value;
     }
     //==================================
 
@@ -117,7 +117,7 @@ namespace occa {
       for (int i = 0; i < argCount; ++i) {
         const attributeArg_t &attr = other.args[i];
         args.push_back(
-          attributeArg_t(exprNode::clone(attr.expr),
+          attributeArg_t(expr::node_t::clone(attr.value),
                          attr.attributes)
         );
       }
@@ -126,7 +126,7 @@ namespace occa {
       while (it != other.kwargs.end()) {
         const attributeArg_t &attr = it->second;
         kwargs[it->first] = (
-          attributeArg_t(exprNode::clone(attr.expr),
+          attributeArg_t(expr::node_t::clone(attr.value),
                          attr.attributes)
         );
         ++it;
@@ -193,8 +193,8 @@ namespace occa {
 
     std::ostream& operator << (std::ostream &out,
                                const attributeArg_t &attr) {
-      if (attr.expr) {
-        out << *(attr.expr);
+      if (attr.value) {
+        out << *(attr.value);
         if (attr.attributes.size()) {
           out << ' ';
         }

@@ -20,11 +20,12 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
 #include <occa/tools/string.hpp>
-#include <occa/lang/mode/opencl.hpp>
-#include <occa/lang/mode/okl.hpp>
-#include <occa/lang/mode/oklForStatement.hpp>
 #include <occa/lang/builtins/attributes.hpp>
 #include <occa/lang/builtins/types.hpp>
+#include <occa/lang/expr.hpp>
+#include <occa/lang/mode/okl.hpp>
+#include <occa/lang/mode/oklForStatement.hpp>
+#include <occa/lang/mode/opencl.hpp>
 
 namespace occa {
   namespace lang {
@@ -134,7 +135,7 @@ namespace occa {
       void openclParser::setLocalQualifiers() {
         statementExprMap exprMap;
         findStatements(statementType::declaration,
-                       exprNodeType::variable,
+                       expr::nodeType::variable,
                        root,
                        sharedVariableMatcher,
                        exprMap);
@@ -154,7 +155,7 @@ namespace occa {
         }
       }
 
-      bool openclParser::sharedVariableMatcher(exprNode &expr) {
+      bool openclParser::sharedVariableMatcher(expr::node_t &expr) {
         return expr.hasAttribute("shared");
       }
 
@@ -173,8 +174,8 @@ namespace occa {
           statement_t &barrierSmnt = (
             *(new expressionStatement(
                 smnt.up,
-                *(new identifierNode(smnt.source,
-                                     "barrier(CLK_LOCAL_MEM_FENCE)"))
+                *(new expr::identifierNode_t(smnt.source,
+                                             "barrier(CLK_LOCAL_MEM_FENCE)"))
               ))
           );
 
@@ -234,7 +235,7 @@ namespace occa {
       void openclParser::migrateLocalDecls(functionDeclStatement &kernelSmnt) {
         statementExprMap exprMap;
         findStatements(statementType::declaration,
-                       exprNodeType::variable,
+                       expr::nodeType::variable,
                        kernelSmnt,
                        sharedVariableMatcher,
                        exprMap);

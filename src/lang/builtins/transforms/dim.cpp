@@ -19,11 +19,11 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  */
-#include <occa/lang/exprNode.hpp>
-#include <occa/lang/statement.hpp>
-#include <occa/lang/variable.hpp>
 #include <occa/lang/builtins/types.hpp>
 #include <occa/lang/builtins/transforms/dim.hpp>
+#include <occa/lang/expr.hpp>
+#include <occa/lang/statement.hpp>
+#include <occa/lang/variable.hpp>
 
 namespace occa {
   namespace lang {
@@ -32,7 +32,7 @@ namespace occa {
         scopeSmnt(NULL) {
         validStatementTypes = (statementType::expression |
                                statementType::declaration);
-        validExprNodeTypes = exprNodeType::call;
+        validExprNodeTypes = expr::nodeType::call;
       }
 
       statement_t* dim::transformStatement(statement_t &smnt) {
@@ -45,14 +45,14 @@ namespace occa {
         return success ? &smnt : NULL;
       }
 
-      exprNode* dim::transformExprNode(exprNode &node) {
-        callNode &call = (callNode&) node;
-        if (!(call.value->type() & exprNodeType::variable)) {
+      expr::node_t* dim::transformExprNode(expr::node_t &node) {
+        expr::callNode_t &call = (expr::callNode_t&) node;
+        if (!(call.value->type() & expr::nodeType::variable)) {
           return &node;
         }
 
         // Check @dim
-        variable_t &var = ((variableNode*) call.value)->value;
+        variable_t &var = ((expr::variableNode_t*) call.value)->value;
         attributeTokenMap::iterator it = var.attributes.find("dim");
         if (it == var.attributes.end()) {
           return &node;
@@ -75,35 +75,35 @@ namespace occa {
         }
         // 3
         // 2 + (2 * 3)
-        exprNode *index = call.args[order[dimCount - 1]];
+        expr::node_t *index = call.args[order[dimCount - 1]];
         for (int i = (dimCount - 2); i >= 0; --i) {
           const int i2 = order[i];
           token_t *source = call.args[i2]->token;
-          exprNode *indexInParen = index->wrapInParentheses();
+          expr::node_t *indexInParen = index->wrapInParentheses();
           // Don't delete the initial call.args[...]
           if (i < (dimCount - 2)) {
             delete index;
           }
-          exprNode *dimInParen = dimAttr.args[i2].expr->wrapInParentheses();
-          binaryOpNode mult(source,
-                            op::mult,
-                            *dimInParen,
-                            *indexInParen);
+          expr::node_t *dimInParen = dimAttr.args[i2].value->wrapInParentheses();
+          expr::binaryOpNode_t mult(source,
+                                    op::mult,
+                                    *dimInParen,
+                                    *indexInParen);
           delete dimInParen;
           delete indexInParen;
-          parenthesesNode multInParen(source,
-                                      mult);
-          exprNode *argInParen = call.args[i2]->wrapInParentheses();
+          expr::parenthesesNode_t multInParen(source,
+                                              mult);
+          expr::node_t *argInParen = call.args[i2]->wrapInParentheses();
 
-          index = new binaryOpNode(source,
-                                   op::add,
-                                   *argInParen,
-                                   multInParen);
+          index = new expr::binaryOpNode_t(source,
+                                           op::add,
+                                           *argInParen,
+                                           multInParen);
           delete argInParen;
         }
-        exprNode *newValue = new subscriptNode(call.token,
-                                               *(call.value),
-                                               *index);
+        expr::node_t *newValue = new expr::subscriptNode_t(call.token,
+                                                           *(call.value),
+                                                           *index);
         // Don't delete the initial call.args[...]
         if (dimCount > 1) {
           delete index;
@@ -111,7 +111,7 @@ namespace occa {
         return scopeSmnt->replaceIdentifiers(newValue);
       }
 
-      bool dim::isValidDim(callNode &call,
+      bool dim::isValidDim(expr::callNode_t &call,
                            attributeToken_t &dimAttr) {
         const int dimCount = (int) dimAttr.args.size();
         const int argCount = (int) call.args.size();
@@ -149,7 +149,7 @@ namespace occa {
           return false;
         }
         for (int i = 0; i < orderCount; ++i) {
-          order[i] = (int) dimOrderAttr.args[i].expr->evaluate();
+          order[i] = (int) dimOrderAttr.args[i].value->evaluate();
         }
         return true;
       }
@@ -165,7 +165,7 @@ namespace occa {
       }
 
       bool dim::applyToExpr(statement_t &smnt,
-                            exprNode *&expr) {
+                            expr::node_t *&expr) {
         if (expr == NULL) {
           return true;
         }

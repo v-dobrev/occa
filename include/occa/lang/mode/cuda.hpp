@@ -60,7 +60,7 @@ namespace occa {
 
         void setKernelQualifiers(functionDeclStatement &kernelSmnt);
 
-        static bool sharedVariableMatcher(exprNode &expr);
+        static bool sharedVariableMatcher(expr::node_t &expr);
       };
     }
   }

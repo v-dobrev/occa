@@ -56,7 +56,7 @@ namespace occa {
 
         void setupExclusiveIndices();
 
-        static bool exclusiveVariableMatcher(exprNode &expr);
+        static bool exclusiveVariableMatcher(expr::node_t &expr);
 
         static bool exclusiveInnerLoopMatcher(statement_t &smnt);
 
@@ -64,9 +64,9 @@ namespace occa {
                                statementPtrVector &loopSmnts);
 
 
-        static exprNode* updateExclusiveExprNodes(statement_t &smnt,
-                                                  exprNode &expr,
-                                                  const bool isBeingDeclared);
+        static expr::node_t* updateExclusiveExprNodes(statement_t &smnt,
+                                                      expr::node_t &expr,
+                                                      const bool isBeingDeclared);
       };
     }
   }

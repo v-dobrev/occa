@@ -22,10 +22,10 @@
 #include <occa/tools/env.hpp>
 #include <occa/tools/testing.hpp>
 
+#include <occa/lang/builtins/types.hpp>
+#include <occa/lang/expr.hpp>
 #include <occa/lang/token.hpp>
 #include <occa/lang/type.hpp>
-#include <occa/lang/expression.hpp>
-#include <occa/lang/builtins/types.hpp>
 #include <occa/lang/variable.hpp>
 
 void testQualifiers();

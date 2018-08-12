@@ -27,22 +27,20 @@
 #include <list>
 #include <vector>
 
-#include <occa/lang/exprNode.hpp>
 #include <occa/lang/statement.hpp>
 #include <occa/lang/statementTransform.hpp>
 #include <occa/lang/exprTransform.hpp>
+#include <occa/lang/expr/node.hpp>
 
 namespace occa {
   namespace lang {
-    typedef std::vector<statement_t*>              statementPtrVector;
-    typedef std::vector<exprNode*>                 exprNodeVector;
-    typedef std::map<statement_t*, exprNodeVector> statementExprMap;
+    typedef std::map<statement_t*, expr::nodeVector> statementExprMap;
 
     typedef bool (*statementMatcher)(statement_t &smnt);
-    typedef bool (*exprNodeMatcher)(exprNode &expr);
-    typedef exprNode* (*smntExprTransform)(statement_t &smnt,
-                                           exprNode &expr,
-                                           const bool isBeingDeclared);
+    typedef bool (*exprNodeMatcher)(expr::node_t &expr);
+    typedef expr::node_t* (*smntExprTransform)(statement_t &smnt,
+                                               expr::node_t &expr,
+                                               const bool isBeingDeclared);
 
     namespace transforms {
       //---[ Statement ]----------------
@@ -93,24 +91,24 @@ namespace occa {
       //---[ Expr Node ]----------------
       class exprNodeFinder : public exprTransform {
       private:
-        exprNodeVector *exprNodes;
+        expr::nodeVector *exprNodes;
 
       public:
         exprNodeFinder();
 
-        void getExprNodes(exprNode &node,
-                          exprNodeVector &exprNodes_);
+        void getExprNodes(expr::node_t &node,
+                          expr::nodeVector &exprNodes_);
 
-        virtual exprNode* transformExprNode(exprNode &expr);
+        virtual expr::node_t* transformExprNode(expr::node_t &expr);
 
-        virtual bool matchesExprNode(exprNode &expr) = 0;
+        virtual bool matchesExprNode(expr::node_t &expr) = 0;
       };
 
       class exprNodeTypeFinder : public exprNodeFinder {
       public:
         exprNodeTypeFinder(const int validExprNodeTypes_);
 
-        virtual bool matchesExprNode(exprNode &expr);
+        virtual bool matchesExprNode(expr::node_t &expr);
       };
 
       class exprNodeAttrFinder : public exprNodeFinder {
@@ -121,7 +119,7 @@ namespace occa {
         exprNodeAttrFinder(const int validExprNodeTypes_,
                            const std::string &attr_);
 
-        virtual bool matchesExprNode(exprNode &expr);
+        virtual bool matchesExprNode(expr::node_t &expr);
       };
 
       class exprNodeMatcherFinder : public exprNodeFinder {
@@ -131,7 +129,7 @@ namespace occa {
         exprNodeMatcherFinder(const int validExprNodeTypes_,
                               exprNodeMatcher matcher_);
 
-        virtual bool matchesExprNode(exprNode &expr);
+        virtual bool matchesExprNode(expr::node_t &expr);
       };
       //================================
 
@@ -152,7 +150,7 @@ namespace occa {
 
         virtual statement_t* transformStatement(statement_t &smnt);
 
-        virtual exprNode* transformExprNode(exprNode &node);
+        virtual expr::node_t* transformExprNode(expr::node_t &node);
       };
 
       class statementExprFinder : public statementTypeFinder,
@@ -261,18 +259,18 @@ namespace occa {
                               statementPtrVector &statements);
 
     void findExprNodes(const int validExprNodeTypes,
-                       exprNode &expr,
+                       expr::node_t &expr,
                        exprNodeMatcher matcher,
-                       exprNodeVector &exprNodes);
+                       expr::nodeVector &exprNodes);
 
     void findExprNodesByType(const int validExprNodeTypes,
-                             exprNode &expr,
-                             exprNodeVector &exprNodes);
+                             expr::node_t &expr,
+                             expr::nodeVector &exprNodes);
 
     void findExprNodesByAttr(const int validExprNodeTypes,
                              const std::string &attr,
-                             exprNode &expr,
-                             exprNodeVector &exprNodes);
+                             expr::node_t &expr,
+                             expr::nodeVector &exprNodes);
 
     void findStatementTree(const int validStatementTypes,
                            statement_t &smnt,

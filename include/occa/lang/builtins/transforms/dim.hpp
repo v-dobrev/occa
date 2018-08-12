@@ -23,7 +23,10 @@
 #ifndef OCCA_LANG_BUILTINS_TRANSFORMS_DIM_HEADER
 #define OCCA_LANG_BUILTINS_TRANSFORMS_DIM_HEADER
 
+#include <occa/lang/expr/node.hpp>
+#include <occa/lang/expr/callNode.hpp>
 #include <occa/lang/exprTransform.hpp>
+#include <occa/lang/statement.hpp>
 #include <occa/lang/statementTransform.hpp>
 
 namespace occa {
@@ -37,9 +40,9 @@ namespace occa {
         dim();
 
         virtual statement_t* transformStatement(statement_t &smnt);
-        virtual exprNode* transformExprNode(exprNode &node);
+        virtual expr::node_t* transformExprNode(expr::node_t &node);
 
-        bool isValidDim(callNode &call,
+        bool isValidDim(expr::callNode_t &call,
                         attributeToken_t &dimAttr);
 
         bool getDimOrder(attributeToken_t &dimAttr,
@@ -48,7 +51,7 @@ namespace occa {
 
         bool applyToDeclStatement(declarationStatement &smnt);
         bool applyToExpr(statement_t &smnt,
-                         exprNode *&expr);
+                         expr::node_t *&expr);
       };
 
       bool applyDimTransforms(statement_t &smnt);
