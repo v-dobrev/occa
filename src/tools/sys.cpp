@@ -955,6 +955,14 @@ namespace occa {
         lex::skipToWhitespace(c);
         function = std::string(functionStart, (c - functionStart));
       }
+      {
+        std::stringstream ss;
+        ss << " [" << frameInfo.dli_fname
+           << ": symb: " << frameInfo.dli_sname
+           << ": base: " << frameInfo.dli_fbase
+           << ", addr: " << frame << "]";
+        function += ss.str();
+      }
       return function;
 #else
       return "";
