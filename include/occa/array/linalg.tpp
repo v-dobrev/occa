@@ -347,7 +347,7 @@ namespace occa {
       for (int i = 0; i < 1024; ++i) {
         ret += hostBuffer[i];
       }
-      delete hostBuffer;
+      delete [] hostBuffer;
       return ret;
     }
 
