@@ -47,10 +47,12 @@ namespace occa {
   }
 
   //---[ modeMemory_t ]---------------------
-  class modeMemory_t : public gc::withRefs {
+  class modeMemory_t : public gc::ringEntry_t {
   public:
     int memInfo;
     occa::properties properties;
+
+    gc::ring_t<memory> memoryRing;
 
     char *ptr;
     char *uvaPtr;
@@ -60,7 +62,14 @@ namespace occa {
     udim_t size;
     bool canBeFreed;
 
-    modeMemory_t(const occa::properties &properties_);
+    modeMemory_t(modeDevice_t *modeDevice_,
+                 udim_t size_,
+                 const occa::properties &properties_);
+
+    void dontUseRefs();
+    void addMemoryRef(memory *mem);
+    void removeMemoryRef(memory *mem);
+    bool needsFree() const;
 
     bool isManaged() const;
     bool inDevice() const;
@@ -118,7 +127,8 @@ namespace occa {
   //====================================
 
   //---[ memory ]-----------------------
-  class memory {
+  class memory : public gc::ringEntry_t {
+    friend class occa::modeMemory_t;
     friend class occa::device;
     friend class occa::kernelArg;
 
@@ -137,8 +147,7 @@ namespace occa {
   private:
     void assertInitialized() const;
     void setModeMemory(modeMemory_t *modeMemory_);
-    void setModeDevice(modeDevice_t *modeDevice);
-    void removeRef();
+    void removeMemoryRef();
 
   public:
     void dontUseRefs();
@@ -244,7 +253,10 @@ namespace occa {
                              const occa::memory &memory);
 
   namespace cpu {
-    occa::memory wrapMemory(void *ptr, const udim_t bytes);
+    occa::memory wrapMemory(occa::device dev,
+                            void *ptr,
+                            const udim_t bytes,
+                            const occa::properties &props = occa::properties());
   }
 }
 

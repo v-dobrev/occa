@@ -57,6 +57,8 @@ namespace occa {
 
       virtual hash_t hash() const;
 
+      virtual hash_t kernelHash(const occa::properties &props) const;
+
       //---[ Stream ]-------------------
       virtual stream_t createStream() const;
       virtual void freeStream(stream_t s) const;
@@ -84,7 +86,7 @@ namespace occa {
 
       void compileKernel(const std::string &hashDir,
                          const std::string &kernelName,
-                         occa::properties &kernelProps,
+                         const occa::properties &kernelProps,
                          io::lock_t &lock);
 
       modeKernel_t* buildOKLKernelFromBinary(const std::string &hashDir,

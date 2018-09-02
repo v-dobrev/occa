@@ -31,23 +31,55 @@
 
 namespace occa {
   //---[ modeMemory_t ]---------------------
-  modeMemory_t::modeMemory_t(const occa::properties &properties_) {
-    memInfo = uvaFlag::none;
-    properties = properties_;
-
-    ptr    = NULL;
-    uvaPtr = NULL;
-
-    modeDevice = NULL;
-
-    size = 0;
-    canBeFreed = true;
+  modeMemory_t::modeMemory_t(modeDevice_t *modeDevice_,
+                             udim_t size_,
+                             const occa::properties &properties_) :
+    memInfo(uvaFlag::none),
+    properties(properties_),
+    ptr(NULL),
+    uvaPtr(NULL),
+    modeDevice(modeDevice_),
+    size(size_),
+    canBeFreed(true) {
+    modeDevice->addMemoryRef(this);
   }
 
-  modeMemory_t::~modeMemory_t() {}
+  modeMemory_t::~modeMemory_t() {
+    // NULL all wrappers
+    memory *head = (memory*) memoryRing.head;
+    if (head) {
+      memory *ptr_ = head;
+      do {
+        memory *nextPtr = (memory*) ptr_->rightRingEntry;
+        ptr_->modeMemory = NULL;
+        ptr_->removeRef();
+        ptr_ = nextPtr;
+      } while (ptr_ != head);
+    }
+    // Remove ref from device
+    if (modeDevice) {
+      modeDevice->removeMemoryRef(this);
+    }
+  }
 
   void* modeMemory_t::getPtr(const occa::properties &props) {
     return ptr;
+  }
+
+  void modeMemory_t::dontUseRefs() {
+    memoryRing.dontUseRefs();
+  }
+
+  void modeMemory_t::addMemoryRef(memory *mem) {
+    memoryRing.addRef(mem);
+  }
+
+  void modeMemory_t::removeMemoryRef(memory *mem) {
+    memoryRing.removeRef(mem);
+  }
+
+  bool modeMemory_t::needsFree() const {
+    return memoryRing.needsFree();
   }
 
   bool modeMemory_t::isManaged() const {
@@ -92,7 +124,7 @@ namespace occa {
   }
 
   memory::~memory() {
-    removeRef();
+    removeMemoryRef();
   }
 
   void memory::assertInitialized() const {
@@ -102,29 +134,27 @@ namespace occa {
 
   void memory::setModeMemory(modeMemory_t *modeMemory_) {
     if (modeMemory != modeMemory_) {
-      removeRef();
+      removeMemoryRef();
       modeMemory = modeMemory_;
-      modeMemory->addRef();
+      if (modeMemory) {
+        modeMemory->addMemoryRef(this);
+      }
     }
   }
 
-  void memory::setModeDevice(modeDevice_t *modeDevice) {
-    modeMemory->modeDevice = modeDevice;
-    // If this is the very first reference, update the device references
-    if (modeMemory->getRefs() == 1) {
-      modeMemory->modeDevice->addRef();
+  void memory::removeMemoryRef() {
+    if (!modeMemory) {
+      return;
     }
-  }
-
-  void memory::removeRef() {
-    if (modeMemory && !modeMemory->removeRef()) {
+    modeMemory->removeMemoryRef(this);
+    if (modeMemory->modeMemory_t::needsFree()) {
       free();
     }
   }
 
   void memory::dontUseRefs() {
     if (modeMemory) {
-      modeMemory->dontUseRefs();
+      modeMemory->modeMemory_t::dontUseRefs();
     }
   }
 
@@ -516,37 +546,35 @@ namespace occa {
     if (modeMemory == NULL) {
       return;
     }
-    if (!modeMemory->canBeFreed) {
-      delete modeMemory;
-      modeMemory = NULL;
-      return;
-    }
 
     modeDevice_t *modeDevice = modeMemory->modeDevice;
-    modeDevice->bytesAllocated -= (modeMemory->size);
 
-    if (modeMemory->uvaPtr) {
-      uvaMap.erase(modeMemory->uvaPtr);
-      modeDevice->uvaMap.erase(modeMemory->uvaPtr);
+    // Free the actual backend memory object
+    if (modeMemory->canBeFreed) {
+      modeDevice->bytesAllocated -= (modeMemory->size);
 
-      // CPU case where memory is shared
-      if (modeMemory->uvaPtr != modeMemory->ptr) {
-        uvaMap.erase(modeMemory->ptr);
+      if (modeMemory->uvaPtr) {
+        uvaMap.erase(modeMemory->uvaPtr);
         modeDevice->uvaMap.erase(modeMemory->uvaPtr);
 
-        sys::free(modeMemory->uvaPtr);
+        // CPU case where memory is shared
+        if (modeMemory->uvaPtr != modeMemory->ptr) {
+          uvaMap.erase(modeMemory->ptr);
+          modeDevice->uvaMap.erase(modeMemory->uvaPtr);
+
+          sys::free(modeMemory->uvaPtr);
+        }
+      }
+
+      if (freeMemory) {
+        modeMemory->free();
+      } else {
+        modeMemory->detach();
       }
     }
 
-    if (freeMemory) {
-      modeMemory->free();
-    } else {
-      modeMemory->detach();
-    }
-
-    modeDevice->removeRef();
+    // ~modeMemory_t NULLs all wrappers
     delete modeMemory;
-    modeMemory = NULL;
   }
 
   std::ostream& operator << (std::ostream &out,
@@ -556,12 +584,15 @@ namespace occa {
   }
 
   namespace cpu {
-    occa::memory wrapMemory(void *ptr, const udim_t bytes) {
-      serial::memory &mem = *(new serial::memory);
-      mem.dontUseRefs();
+    occa::memory wrapMemory(occa::device device,
+                            void *ptr,
+                            const udim_t bytes,
+                            const occa::properties &props) {
+      serial::memory &mem = *(new serial::memory(device.getModeDevice(),
+                                                 bytes,
+                                                 props));
 
-      mem.modeDevice = host().getModeDevice();
-      mem.size = bytes;
+      mem.dontUseRefs();
       mem.ptr = (char*) ptr;
 
       return occa::memory(&mem);

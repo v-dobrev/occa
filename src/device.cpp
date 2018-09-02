@@ -35,12 +35,80 @@ namespace occa {
 
     currentStream = NULL;
     bytesAllocated = 0;
-
-    reductionBuffer = NULL; // init & modified by occa::device methods
   }
 
   modeDevice_t::~modeDevice_t() {
-    delete reductionBuffer;
+    // Free all kernel objects
+    modeKernel_t *kernelHead = (modeKernel_t*) kernelRing.head;
+    if (kernelHead) {
+      modeKernel_t *ptr = kernelHead;
+      do {
+        modeKernel_t *nextPtr = (modeKernel_t*) ptr->rightRingEntry;
+        // Remove modeDevice to prevent messing with this ring
+        ptr->modeDevice = NULL;
+        delete ptr;
+        ptr = nextPtr;
+      } while (ptr != kernelHead);
+      kernelRing.clear();
+    }
+
+    // Free all memory objects
+    modeMemory_t *memoryHead = (modeMemory_t*) memoryRing.head;
+    if (memoryHead) {
+      modeMemory_t *ptr = memoryHead;
+      do {
+        modeMemory_t *nextPtr = (modeMemory_t*) ptr->rightRingEntry;
+        // Remove modeDevice to prevent messing with this ring
+        ptr->modeDevice = NULL;
+        delete ptr;
+        ptr = nextPtr;
+      } while (ptr != memoryHead);
+      memoryRing.clear();
+    }
+
+    // Null all wrappers
+    device *deviceHead = (device*) deviceRing.head;
+    if (deviceHead) {
+      device *ptr = deviceHead;
+      do {
+        device *nextPtr = (device*) ptr->rightRingEntry;
+        ptr->modeDevice = NULL;
+        ptr->removeRef();
+        ptr = nextPtr;
+      } while (ptr != deviceHead);
+    }
+  }
+
+  void modeDevice_t::dontUseRefs() {
+    deviceRing.dontUseRefs();
+  }
+
+  void modeDevice_t::addDeviceRef(device *dev) {
+    deviceRing.addRef(dev);
+  }
+
+  void modeDevice_t::removeDeviceRef(device *dev) {
+    deviceRing.removeRef(dev);
+  }
+
+  bool modeDevice_t::needsFree() const {
+    return deviceRing.needsFree();
+  }
+
+  void modeDevice_t::addKernelRef(modeKernel_t *ker) {
+    kernelRing.addRef(ker);
+  }
+
+  void modeDevice_t::removeKernelRef(modeKernel_t *ker) {
+    kernelRing.removeRef(ker);
+  }
+
+  void modeDevice_t::addMemoryRef(modeMemory_t *mem) {
+    memoryRing.addRef(mem);
+  }
+
+  void modeDevice_t::removeMemoryRef(modeMemory_t *mem) {
+    memoryRing.removeRef(mem);
   }
 
   hash_t modeDevice_t::versionedHash() const {
@@ -127,7 +195,7 @@ namespace occa {
   }
 
   device::~device() {
-    removeRef();
+    removeDeviceRef();
   }
 
   void device::assertInitialized() const {
@@ -137,31 +205,27 @@ namespace occa {
 
   void device::setModeDevice(modeDevice_t *modeDevice_) {
     if (modeDevice != modeDevice_) {
-      removeRef();
+      removeDeviceRef();
       modeDevice = modeDevice_;
-      modeDevice->addRef();
-      if (!modeDevice->reductionBuffer) {
-        setReductionBuffer();
+      if (modeDevice) {
+        modeDevice->addDeviceRef(this);
       }
     }
   }
 
-  void device::removeRef() {
-    if (modeDevice && !modeDevice->removeRef()) {
+  void device::removeDeviceRef() {
+    if (!modeDevice) {
+      return;
+    }
+    modeDevice->removeDeviceRef(this);
+    if (modeDevice->modeDevice_t::needsFree()) {
       free();
     }
   }
 
-  void device::setReductionBuffer() {
-    const dim_t bytes = 1024 * sizeof(double);
-    occa::memory buf(malloc(bytes));
-    buf.dontUseRefs();
-    modeDevice->reductionBuffer = buf.getModeMemory();
-  }
-
   void device::dontUseRefs() {
     if (modeDevice) {
-      modeDevice->dontUseRefs();
+      modeDevice->modeDevice_t::dontUseRefs();
     }
   }
 
@@ -222,8 +286,8 @@ namespace occa {
     modeDevice->streams.clear();
     modeDevice->free();
 
+    // ~modeDevice_t NULLs all wrappers
     delete modeDevice;
-    modeDevice = NULL;
   }
 
   const std::string& device::mode() const {
@@ -282,16 +346,6 @@ namespace occa {
       return modeDevice->bytesAllocated;
     }
     return 0;
-  }
-
-  occa::modeMemory_t *device::getReductionBuffer(const dim_t bytes) {
-    if (modeDevice->reductionBuffer->size < bytes) {
-      delete modeDevice->reductionBuffer;
-      occa::memory buf(malloc(bytes));
-      buf.dontUseRefs();
-      modeDevice->reductionBuffer = buf.getModeMemory();
-    }
-    return modeDevice->reductionBuffer;
   }
 
   void device::finish() {
@@ -384,9 +438,9 @@ namespace occa {
     occa::properties allProps = props + kernelProperties();
     allProps["mode"] = mode();
 
-    // TODO: [#184] Properly hash through device
     hash_t kernelHash = (hash()
-                         ^ occa::hash(allProps)
+                         ^ modeDevice->kernelHash(allProps)
+                         ^ kernelHeaderHash(allProps)
                          ^ hashFile(filename));
 
     // TODO: [#185] Fix kernel cache frees
@@ -423,7 +477,7 @@ namespace occa {
 
     // Store in the same directory as cached outputs
     hash_t kernelHash = (hash()
-                         ^ occa::hash(allProps)
+                         ^ occa::hash(allProps) // ^ modeDevice->kernelHash(allProps)
                          ^ occa::hash(content));
 
     io::lock_t lock(kernelHash, "occa-device");
@@ -525,9 +579,7 @@ namespace occa {
                bytes >= 0);
 
     occa::properties memProps = props + memoryProperties();
-
     memory mem(modeDevice->malloc(bytes, src, memProps));
-    mem.setModeDevice(modeDevice);
 
     modeDevice->bytesAllocated += bytes;
 

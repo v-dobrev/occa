@@ -125,6 +125,15 @@ namespace occa {
       return hash_;
     }
 
+    hash_t device::kernelHash(const occa::properties &props) const {
+      return (
+        occa::hash(props["vendor"])
+        ^ props["compiler"]
+        ^ props["compiler_flags"]
+        ^ props["compiler_env_script"]
+      );
+    }
+
     //---[ Stream ]---------------------
     stream_t device::createStream() const {
       return NULL;
@@ -220,7 +229,7 @@ namespace occa {
         io::cacheFile(filename,
                       kc::rawSourceFile,
                       kernelHash,
-                      assembleHeader(kernelProps))
+                      assembleKernelHeader(kernelProps))
       );
 
       lang::kernelMetadataMap metadata;
@@ -317,12 +326,9 @@ namespace occa {
     modeMemory_t* device::malloc(const udim_t bytes,
                                  const void *src,
                                  const occa::properties &props) {
-      memory *mem = new memory(props);
+      memory *mem = new memory(this, bytes, props);
 
-      mem->modeDevice = this;
-      mem->size = bytes;
       mem->ptr = (char*) sys::malloc(bytes);
-
       if (src) {
         ::memcpy(mem->ptr, src, bytes);
       }

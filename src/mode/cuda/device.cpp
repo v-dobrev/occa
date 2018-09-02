@@ -115,6 +115,14 @@ namespace occa {
       return hash_;
     }
 
+    hash_t device::kernelHash(const occa::properties &props) const {
+      return (
+        occa::hash(props["compiler"])
+        ^ props["compiler_flags"]
+        ^ props["compiler_env_script"]
+      );
+    }
+
     //---[ Stream ]---------------------
     stream_t device::createStream() const {
       CUstream *retStream = new CUstream;
@@ -209,12 +217,10 @@ namespace occa {
                                       const hash_t kernelHash,
                                       const occa::properties &kernelProps) {
 
-      occa::properties allProps = properties["kernel"] + kernelProps;
-
       const std::string hashDir = io::hashDir(filename, kernelHash);
       const std::string binaryFilename = hashDir + kc::binaryFile;
       bool foundBinary = true;
-      bool usingOKL = allProps.get("okl", true);
+      bool usingOKL = kernelProps.get("okl", true);
 
       io::lock_t lock(kernelHash, "cuda-kernel");
       if (lock.isMine()) {
@@ -225,7 +231,7 @@ namespace occa {
         }
       }
 
-      const bool verbose = allProps.get("verbose", false);
+      const bool verbose = kernelProps.get("verbose", false);
       if (foundBinary) {
         if (verbose) {
           std::cout << "Loading cached ["
@@ -245,7 +251,7 @@ namespace occa {
                                           kernelName,
                                           hostMetadata,
                                           deviceMetadata,
-                                          allProps,
+                                          kernelProps,
                                           lock);
         } else {
           return buildKernelFromBinary(binaryFilename,
@@ -259,7 +265,7 @@ namespace occa {
         io::cacheFile(filename,
                       kc::rawSourceFile,
                       kernelHash,
-                      assembleHeader(allProps))
+                      assembleKernelHeader(kernelProps))
       );
 
       modeKernel_t *launcherKernel = NULL;
@@ -270,7 +276,7 @@ namespace occa {
         bool valid = parseFile(sourceFilename,
                                outputFile,
                                hostOutputFile,
-                               allProps,
+                               kernelProps,
                                hostMetadata,
                                deviceMetadata);
         if (!valid) {
@@ -293,13 +299,13 @@ namespace occa {
 
         writeKernelBuildFile(hashDir + kc::buildFile,
                              kernelHash,
-                             allProps,
+                             kernelProps,
                              deviceMetadata);
       }
 
       compileKernel(hashDir,
                     kernelName,
-                    allProps,
+                    kernelProps,
                     lock);
 
       // Regular CUDA Kernel
@@ -327,14 +333,14 @@ namespace occa {
                           sourceFilename,
                           cuModule,
                           cuFunction,
-                          allProps);
+                          kernelProps);
       }
 
       return buildOKLKernelFromBinary(hashDir,
                                       kernelName,
                                       hostMetadata,
                                       deviceMetadata,
-                                      allProps,
+                                      kernelProps,
                                       lock);
     }
 
@@ -350,25 +356,26 @@ namespace occa {
 
     void device::compileKernel(const std::string &hashDir,
                                const std::string &kernelName,
-                               occa::properties &kernelProps,
+                               const occa::properties &kernelProps,
                                io::lock_t &lock) {
 
-      const bool verbose = kernelProps.get("verbose", false);
+      occa::properties allProps = kernelProps;
+      const bool verbose = allProps.get("verbose", false);
 
       std::string sourceFilename = hashDir + kc::sourceFile;
       std::string binaryFilename = hashDir + kc::binaryFile;
       const std::string ptxBinaryFilename = hashDir + "ptx_binary.o";
 
-      setArchCompilerFlags(kernelProps);
+      setArchCompilerFlags(allProps);
 
       //---[ PTX Check Command ]--------
       std::stringstream command;
-      if (kernelProps.has("compiler_env_script")) {
-        command << kernelProps["compiler_env_script"] << " && ";
+      if (allProps.has("compiler_env_script")) {
+        command << allProps["compiler_env_script"] << " && ";
       }
 
-      command << kernelProps["compiler"]
-              << ' ' << kernelProps["compiler_flags"]
+      command << allProps["compiler"]
+              << ' ' << allProps["compiler_flags"]
               << " -Xptxas -v,-dlcm=cg"
 #if (OCCA_OS == OCCA_WINDOWS_OS)
               << " -D OCCA_OS=OCCA_WINDOWS_OS -D _MSC_VER=1800"
@@ -395,8 +402,8 @@ namespace occa {
 
       //---[ Compiling Command ]--------
       command.str("");
-      command << kernelProps["compiler"]
-              << ' ' << kernelProps["compiler_flags"]
+      command << allProps["compiler"]
+              << ' ' << allProps["compiler_flags"]
               << " -ptx"
 #if (OCCA_OS == OCCA_WINDOWS_OS)
               << " -D OCCA_OS=OCCA_WINDOWS_OS -D _MSC_VER=1800"
@@ -529,9 +536,6 @@ namespace occa {
     modeKernel_t* device::buildKernelFromBinary(const std::string &filename,
                                                 const std::string &kernelName,
                                                 const occa::properties &kernelProps) {
-
-      occa::properties allProps = properties["kernel"] + kernelProps;
-
       CUmodule cuModule;
       CUfunction cuFunction;
 
@@ -546,7 +550,7 @@ namespace occa {
                         filename,
                         cuModule,
                         cuFunction,
-                        allProps);
+                        kernelProps);
     }
     //==================================
 
@@ -562,9 +566,7 @@ namespace occa {
         return unifiedAlloc(bytes, src, props);
       }
 
-      cuda::memory &mem = *(new cuda::memory(props));
-      mem.modeDevice = this;
-      mem.size = bytes;
+      cuda::memory &mem = *(new cuda::memory(this, bytes, props));
 
       OCCA_CUDA_ERROR("Device: Setting Context",
                       cuCtxSetCurrent(cuContext));
@@ -582,9 +584,7 @@ namespace occa {
                                       const void *src,
                                       const occa::properties &props) {
 
-      cuda::memory &mem = *(new cuda::memory(props));
-      mem.modeDevice = this;
-      mem.size = bytes;
+      cuda::memory &mem = *(new cuda::memory(this, bytes, props));
 
       OCCA_CUDA_ERROR("Device: Setting Context",
                       cuCtxSetCurrent(cuContext));
@@ -604,10 +604,8 @@ namespace occa {
     modeMemory_t* device::unifiedAlloc(const udim_t bytes,
                                        const void *src,
                                        const occa::properties &props) {
-      cuda::memory &mem = *(new cuda::memory(props));
+      cuda::memory &mem = *(new cuda::memory(this, bytes, props));
 #if CUDA_VERSION >= 8000
-      mem.modeDevice = this;
-      mem.size = bytes;
       mem.isUnified = true;
 
       const unsigned int flags = (props.get("cuda/attachedHost", false) ?
